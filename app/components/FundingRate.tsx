@@ -8,13 +8,16 @@ interface FundingRateData {
   nextSettlement: Date;
 }
 
-const FundingRate: React.FC = () => {
+interface Props {
+  symbol: string;
+}
+
+const FundingRate: React.FC<Props> = ({ symbol }) => {
   const [fundingRate, setFundingRate] = useState<FundingRateData>({
     rate: 0,
     nextSettlement: new Date()
   });
   const [isLoading, setIsLoading] = useState(true);
-  const symbol = 'btcusdt';
 
   const { error } = useWebSocketManager(`${symbol}@markPrice@1s`, {
     onMessage: (data) => {

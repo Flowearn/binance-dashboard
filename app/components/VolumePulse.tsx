@@ -8,15 +8,18 @@ interface TimeWindow {
   timestamp: number;
 }
 
+interface Props {
+  symbol: string;
+}
+
 const WINDOW_SIZE = 20000; // 20 seconds
 const NUM_WINDOWS = 3;
 
-const VolumePulse: React.FC = () => {
+const VolumePulse: React.FC<Props> = ({ symbol }) => {
   const [timeWindows, setTimeWindows] = useState<TimeWindow[]>(
     Array(NUM_WINDOWS).fill(null).map(() => ({ volume: 0, timestamp: Date.now() }))
   );
   const [isLoading, setIsLoading] = useState(true);
-  const symbol = 'btcusdt';
 
   const { error } = useWebSocketManager(`${symbol}@aggTrade`, {
     onMessage: (trade) => {

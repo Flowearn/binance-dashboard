@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useWebSocketManager } from '../hooks/useWebSocketManager';
 
 interface LiquidationPoint {
   price: string;
@@ -15,62 +16,58 @@ interface LiquidationSummary {
   total: string;
 }
 
-const LiquidationPoints: React.FC = () => {
-  const [liquidationData, setLiquidationData] = useState<LiquidationSummary>({
-    points: [],
-    totalLong: '0',
-    totalShort: '0',
-    total: '0'
-  });
+interface Props {
+  symbol: string;
+}
+
+const LiquidationPoints: React.FC<Props> = ({ symbol }) => {
+  const [liquidationData, setLiquidationData] = useState<LiquidationPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate liquidation data updates
-  useEffect(() => {
-    const fetchData = () => {
-      const basePrice = 40000;
-      const points: LiquidationPoint[] = [];
-      let totalLong = 0;
-      let totalShort = 0;
+  const { error: wsError } = useWebSocketManager(`${symbol}@forceOrder`, {
+    onMessage: (data) => {
+      // Simulate liquidation data updates
+      const fetchData = () => {
+        const basePrice = 40000;
+        const points: LiquidationPoint[] = [];
+        let totalLong = 0;
+        let totalShort = 0;
 
-      // Generate long liquidation points
-      for (let i = 0; i < 3; i++) {
-        const price = basePrice - (1000 + Math.random() * 2000);
-        const volume = Math.random() * 1000000;
-        totalLong += volume;
-        points.push({
-          price: price.toFixed(2),
-          volume: volume.toFixed(0),
-          type: 'long'
-        });
-      }
+        // Generate long liquidation points
+        for (let i = 0; i < 3; i++) {
+          const price = basePrice - (1000 + Math.random() * 2000);
+          const volume = Math.random() * 1000000;
+          totalLong += volume;
+          points.push({
+            price: price.toFixed(2),
+            volume: volume.toFixed(0),
+            type: 'long'
+          });
+        }
 
-      // Generate short liquidation points
-      for (let i = 0; i < 3; i++) {
-        const price = basePrice + (1000 + Math.random() * 2000);
-        const volume = Math.random() * 1000000;
-        totalShort += volume;
-        points.push({
-          price: price.toFixed(2),
-          volume: volume.toFixed(0),
-          type: 'short'
-        });
-      }
+        // Generate short liquidation points
+        for (let i = 0; i < 3; i++) {
+          const price = basePrice + (1000 + Math.random() * 2000);
+          const volume = Math.random() * 1000000;
+          totalShort += volume;
+          points.push({
+            price: price.toFixed(2),
+            volume: volume.toFixed(0),
+            type: 'short'
+          });
+        }
 
-      setLiquidationData({
-        points: points.sort((a, b) => parseFloat(a.price) - parseFloat(b.price)),
-        totalLong: totalLong.toFixed(0),
-        totalShort: totalShort.toFixed(0),
-        total: (totalLong + totalShort).toFixed(0)
-      });
-      setIsLoading(false);
-    };
+        setLiquidationData(points.sort((a, b) => parseFloat(a.price) - parseFloat(b.price)));
+        setIsLoading(false);
+      };
 
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
+      fetchData();
+      const interval = setInterval(fetchData, 10000);
 
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  });
 
   if (isLoading) {
     return (
@@ -88,12 +85,12 @@ const LiquidationPoints: React.FC = () => {
     );
   }
 
-  const maxVolume = Math.max(...liquidationData.points.map(p => parseFloat(p.volume)));
+  const maxVolume = Math.max(...liquidationData.map(p => parseFloat(p.volume)));
 
   return (
     <div>
       <div className="liquidation-points">
-        {liquidationData.points.map((point, index) => {
+        {liquidationData.map((point, index) => {
           const percentage = (parseFloat(point.volume) / maxVolume * 100).toFixed(2);
           return (
             <div key={index} className={`liquidation-bar liquidation-${point.type}`}>
@@ -117,19 +114,19 @@ const LiquidationPoints: React.FC = () => {
           Total Liquidation Value (24h)
         </div>
         <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-          ${Number(liquidationData.total).toLocaleString()}
+          ${liquidationData.reduce((total, point) => total + parseFloat(point.volume), 0).toLocaleString()}
         </div>
         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-around' }}>
           <div>
             <div className="liquidation-type type-long">LONG</div>
             <div style={{ marginTop: '8px' }}>
-              ${Number(liquidationData.totalLong).toLocaleString()}
+              ${liquidationData.filter(p => p.type === 'long').reduce((total, point) => total + parseFloat(point.volume), 0).toLocaleString()}
             </div>
           </div>
           <div>
             <div className="liquidation-type type-short">SHORT</div>
             <div style={{ marginTop: '8px' }}>
-              ${Number(liquidationData.totalShort).toLocaleString()}
+              ${liquidationData.filter(p => p.type === 'short').reduce((total, point) => total + parseFloat(point.volume), 0).toLocaleString()}
             </div>
           </div>
         </div>

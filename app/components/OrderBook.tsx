@@ -14,11 +14,14 @@ interface OrderBookData {
   asks: OrderBookEntry[];
 }
 
-const OrderBook: React.FC = () => {
-  const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
+interface Props {
+  symbol: string;
+}
+
+const OrderBook: React.FC<Props> = ({ symbol }) => {
+  const [orderBookData, setOrderBookData] = useState<OrderBookData>({ bids: [], asks: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const symbol = 'btcusdt';
   const wsUrl = `wss://fstream.binance.com/ws/${symbol}@depth20@100ms`;
 
   const { lastMessage, readyState } = useWebSocket(wsUrl, {
@@ -68,7 +71,7 @@ const OrderBook: React.FC = () => {
           };
         });
 
-        setOrderBook({
+        setOrderBookData({
           asks: processedAsks,
           bids: processedBids,
         });
@@ -82,7 +85,7 @@ const OrderBook: React.FC = () => {
   if (isLoading) {
     return (
       <div className="box">
-        <h2>Order Book (BTC/USDT)</h2>
+        <h2>Order Book ({symbol})</h2>
         <div className="loading-container">
           <div className="loading-text">Connecting to market data...</div>
         </div>
@@ -93,7 +96,7 @@ const OrderBook: React.FC = () => {
   if (error) {
     return (
       <div className="box">
-        <h2>Order Book (BTC/USDT)</h2>
+        <h2>Order Book ({symbol})</h2>
         <div className="error-container">
           <div className="error-text">{error}</div>
         </div>
@@ -103,13 +106,13 @@ const OrderBook: React.FC = () => {
 
   // Calculate max total for depth visualization
   const maxTotal = Math.max(
-    parseFloat(orderBook.asks[orderBook.asks.length - 1]?.total || '0'),
-    parseFloat(orderBook.bids[orderBook.bids.length - 1]?.total || '0')
+    parseFloat(orderBookData.asks[orderBookData.asks.length - 1]?.total || '0'),
+    parseFloat(orderBookData.bids[orderBookData.bids.length - 1]?.total || '0')
   );
 
   return (
     <div className="box">
-      <h2>Order Book (BTC/USDT)</h2>
+      <h2>Order Book ({symbol})</h2>
       <div className="orderbook-container">
         <div>
           <div className="orderbook-header">
@@ -118,7 +121,7 @@ const OrderBook: React.FC = () => {
             <span>Total</span>
           </div>
           <div>
-            {orderBook.asks.map((ask, index) => {
+            {orderBookData.asks.map((ask, index) => {
               const depthWidth = (parseFloat(ask.total) / maxTotal * 100).toFixed(2);
               return (
                 <div key={index} className="orderbook-row trend-down">
@@ -144,7 +147,7 @@ const OrderBook: React.FC = () => {
             <span>Total</span>
           </div>
           <div>
-            {orderBook.bids.map((bid, index) => {
+            {orderBookData.bids.map((bid, index) => {
               const depthWidth = (parseFloat(bid.total) / maxTotal * 100).toFixed(2);
               return (
                 <div key={index} className="orderbook-row trend-up">

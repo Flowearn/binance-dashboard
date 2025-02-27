@@ -12,6 +12,10 @@ interface KlineData extends CandlestickData<Time> {
   close: number;
 }
 
+interface Props {
+  symbol: string;
+}
+
 const INTERVALS = [
   { label: '1m', value: '1m' },
   { label: '15m', value: '15m' },
@@ -20,13 +24,12 @@ const INTERVALS = [
   { label: '1D', value: '1d' },
 ];
 
-const KlineChart: React.FC = () => {
+const KlineChart: React.FC<Props> = ({ symbol }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const [currentInterval, setCurrentInterval] = useState('1m');
   const [isLoading, setIsLoading] = useState(true);
-  const symbol = 'btcusdt';
 
   const { error } = useWebSocketManager(`${symbol}@kline_${currentInterval}`, {
     onMessage: (data) => {
@@ -115,7 +118,7 @@ const KlineChart: React.FC = () => {
     seriesRef.current = candlestickSeries;
 
     // Fetch historical data
-    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${currentInterval}&limit=1000`)
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${currentInterval}&limit=1000`)
       .then(response => response.json())
       .then(data => {
         const historicalData = data.map((d: any) => ({
@@ -151,7 +154,7 @@ const KlineChart: React.FC = () => {
         chartRef.current.remove();
       }
     };
-  }, [currentInterval]);
+  }, [currentInterval, symbol]);
 
   const updateChart = (candleData: KlineData) => {
     if (seriesRef.current) {

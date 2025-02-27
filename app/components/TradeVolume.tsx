@@ -10,7 +10,11 @@ interface VolumeData {
   small: number;
 }
 
-const TradeVolume: React.FC = () => {
+interface Props {
+  symbol: string;
+}
+
+const TradeVolume: React.FC<Props> = ({ symbol }) => {
   const [volumeData, setVolumeData] = useState<VolumeData>({
     superLarge: 0,
     large: 0,
@@ -18,7 +22,6 @@ const TradeVolume: React.FC = () => {
     small: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const symbol = 'btcusdt';
 
   const { error } = useWebSocketManager(`${symbol}@aggTrade`, {
     onMessage: (trade) => {
