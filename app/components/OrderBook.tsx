@@ -16,7 +16,7 @@ interface OrderBookData {
 const OrderBook: React.FC = () => {
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
   const symbol = 'btcusdt';
-  const wsUrl = `wss://stream.binance.com:9443/ws/${symbol}@depth20@100ms`;
+  const wsUrl = `wss://fstream.binance.com/ws/${symbol}@depth20@100ms`;
 
   const { lastMessage } = useWebSocket(wsUrl);
 
