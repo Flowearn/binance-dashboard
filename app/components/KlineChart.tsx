@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, CrosshairMode, ISeriesApi, SeriesType, Time, CandlestickData, IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, CrosshairMode, ISeriesApi, SeriesType, Time, CandlestickData } from 'lightweight-charts';
 import { useWebSocketManager } from '../hooks/useWebSocketManager';
 
-interface KlineData extends CandlestickData<Time> {
-  time: Time;
+interface KlineData {
+  time: number;
   open: number;
   high: number;
   low: number;
@@ -27,7 +27,7 @@ const INTERVALS = [
 const KlineChart: React.FC<Props> = ({ symbol }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const seriesRef = useRef<any>(null);
   const [currentInterval, setCurrentInterval] = useState('1m');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,7 +36,7 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
       if (data.k) {
         const kline = data.k;
         const candleData: KlineData = {
-          time: kline.t / 1000 as Time,
+          time: kline.t / 1000,
           open: parseFloat(kline.o),
           high: parseFloat(kline.h),
           low: parseFloat(kline.l),
@@ -51,7 +51,7 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    const chart: IChartApi = createChart(chartContainerRef.current);
+    const chart = createChart(chartContainerRef.current);
     
     chart.applyOptions({
       width: chartContainerRef.current.clientWidth,
@@ -106,8 +106,8 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
       },
     });
 
-    const candlestickSeries = chart.addCandlestickSeries();
-    candlestickSeries.applyOptions({
+    // Create the candlestick series
+    const series = chart.addCandlestickSeries({
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderVisible: false,
@@ -115,28 +115,27 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
       wickDownColor: '#ef5350'
     });
 
-    seriesRef.current = candlestickSeries;
+    seriesRef.current = series;
+    chartRef.current = chart;
 
     // Fetch historical data
-    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${currentInterval}&limit=1000`)
+    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol.toUpperCase()}&interval=${currentInterval}&limit=1000`)
       .then(response => response.json())
       .then(data => {
         const historicalData = data.map((d: any) => ({
-          time: d[0] / 1000 as Time,
+          time: d[0] / 1000,
           open: parseFloat(d[1]),
           high: parseFloat(d[2]),
           low: parseFloat(d[3]),
           close: parseFloat(d[4])
         }));
-        candlestickSeries.setData(historicalData);
+        series.setData(historicalData);
         setIsLoading(false);
       })
       .catch(error => {
         console.error('Error fetching historical data:', error);
         setIsLoading(false);
       });
-
-    chartRef.current = chart;
 
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {

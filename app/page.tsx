@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import OrderBook from './components/OrderBook';
 import FundingRate from './components/FundingRate';
@@ -10,10 +9,19 @@ import VolumePulse from './components/VolumePulse';
 import MarketAnalysis from './components/MarketAnalysis';
 import LiquidationPoints from './components/LiquidationPoints';
 import { ErrorBoundary } from 'react-error-boundary';
+import dynamic from 'next/dynamic';
 
-// Dynamically import KlineChart to avoid SSR issues with TradingView
+// Dynamically import KlineChart with no SSR
 const KlineChart = dynamic(() => import('./components/KlineChart'), {
-  ssr: false
+  ssr: false,
+  loading: () => (
+    <div className="box">
+      <h2>Price Chart</h2>
+      <div className="loading-container">
+        <div className="loading-text">Loading chart...</div>
+      </div>
+    </div>
+  )
 });
 
 interface Symbol {
