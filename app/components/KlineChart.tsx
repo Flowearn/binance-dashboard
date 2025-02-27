@@ -34,7 +34,7 @@ interface KlineData {
 const KlineChart: React.FC = () => {
   const [klineData, setKlineData] = useState<KlineData[]>([]);
   const symbol = 'btcusdt';
-  const wsUrl = `wss://stream.binance.com:9443/ws/${symbol}@kline_1m`;
+  const wsUrl = `wss://fstream.binance.com/ws/${symbol}@kline_1m`;
 
   const { lastMessage } = useWebSocket(wsUrl);
 

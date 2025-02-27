@@ -31,7 +31,7 @@ interface TradeData {
 const TradeVolume: React.FC = () => {
   const [tradeHistory, setTradeHistory] = useState<TradeData[]>([]);
   const symbol = 'btcusdt';
-  const wsUrl = `wss://stream.binance.com:9443/ws/${symbol}@aggTrade`;
+  const wsUrl = `wss://fstream.binance.com/ws/${symbol}@aggTrade`;
 
   const { lastMessage } = useWebSocket(wsUrl);
 
