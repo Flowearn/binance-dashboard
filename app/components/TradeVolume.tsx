@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 import { Line } from 'react-chartjs-2';
