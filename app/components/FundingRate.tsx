@@ -10,15 +10,25 @@ interface FundingRateData {
 
 const FundingRate: React.FC = () => {
   const [fundingRates, setFundingRates] = useState<FundingRateData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFundingRates = async () => {
       try {
+        setIsLoading(true);
+        setError(null);
         const response = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         setFundingRates(data);
       } catch (error) {
         console.error('Error fetching funding rates:', error);
+        setError('Failed to fetch funding rates. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -27,6 +37,28 @@ const FundingRate: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Funding Rates</h2>
+        <div className="flex justify-center items-center h-[200px]">
+          <div className="text-gray-500">Loading funding rates...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Funding Rates</h2>
+        <div className="flex justify-center items-center h-[200px]">
+          <div className="text-red-500">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg">
