@@ -6,6 +6,7 @@ import useWebSocket from 'react-use-websocket';
 interface OrderBookEntry {
   price: string;
   quantity: string;
+  total: string;
 }
 
 interface OrderBookData {
@@ -44,9 +45,32 @@ const OrderBook: React.FC = () => {
     if (lastMessage) {
       try {
         const data = JSON.parse(lastMessage.data);
+        
+        // Calculate running totals
+        let askTotal = 0;
+        let bidTotal = 0;
+        
+        const processedAsks = data.asks.map(([price, quantity]: string[]) => {
+          askTotal += parseFloat(quantity);
+          return {
+            price,
+            quantity,
+            total: askTotal.toFixed(6)
+          };
+        });
+
+        const processedBids = data.bids.map(([price, quantity]: string[]) => {
+          bidTotal += parseFloat(quantity);
+          return {
+            price,
+            quantity,
+            total: bidTotal.toFixed(6)
+          };
+        });
+
         setOrderBook({
-          bids: data.bids.map(([price, quantity]: string[]) => ({ price, quantity })),
-          asks: data.asks.map(([price, quantity]: string[]) => ({ price, quantity })),
+          asks: processedAsks,
+          bids: processedBids,
         });
       } catch (err) {
         console.error('Error parsing message:', err);
@@ -57,10 +81,10 @@ const OrderBook: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Order Book (BTC/USDT)</h2>
-        <div className="flex justify-center items-center h-[200px]">
-          <div className="text-gray-500">Connecting to market data...</div>
+      <div className="box">
+        <h2>Order Book (BTC/USDT)</h2>
+        <div className="loading-container">
+          <div className="loading-text">Connecting to market data...</div>
         </div>
       </div>
     );
@@ -68,36 +92,76 @@ const OrderBook: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Order Book (BTC/USDT)</h2>
-        <div className="flex justify-center items-center h-[200px]">
-          <div className="text-red-500">{error}</div>
+      <div className="box">
+        <h2>Order Book (BTC/USDT)</h2>
+        <div className="error-container">
+          <div className="error-text">{error}</div>
         </div>
       </div>
     );
   }
 
+  // Calculate max total for depth visualization
+  const maxTotal = Math.max(
+    parseFloat(orderBook.asks[orderBook.asks.length - 1]?.total || '0'),
+    parseFloat(orderBook.bids[orderBook.bids.length - 1]?.total || '0')
+  );
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Order Book (BTC/USDT)</h2>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="box">
+      <h2>Order Book (BTC/USDT)</h2>
+      <div className="orderbook-container">
         <div>
-          <h3 className="text-green-600 font-semibold mb-2">Bids</h3>
-          {orderBook.bids.map((bid, index) => (
-            <div key={index} className="text-sm grid grid-cols-2">
-              <span>{parseFloat(bid.price).toFixed(2)}</span>
-              <span>{parseFloat(bid.quantity).toFixed(6)}</span>
-            </div>
-          ))}
+          <div className="orderbook-header">
+            <span>Price(USDT)</span>
+            <span>Amount(BTC)</span>
+            <span>Total</span>
+          </div>
+          <div>
+            {orderBook.asks.map((ask, index) => {
+              const depthWidth = (parseFloat(ask.total) / maxTotal * 100).toFixed(2);
+              return (
+                <div key={index} className="orderbook-row trend-down">
+                  <div 
+                    className="depth-visualization" 
+                    style={{
+                      width: `${depthWidth}%`,
+                      backgroundColor: 'rgba(244, 67, 54, 0.1)'
+                    }}
+                  />
+                  <span className="orderbook-price">${parseFloat(ask.price).toFixed(2)}</span>
+                  <span className="orderbook-amount">{parseFloat(ask.quantity).toFixed(6)}</span>
+                  <span className="orderbook-total">{ask.total}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div>
-          <h3 className="text-red-600 font-semibold mb-2">Asks</h3>
-          {orderBook.asks.map((ask, index) => (
-            <div key={index} className="text-sm grid grid-cols-2">
-              <span>{parseFloat(ask.price).toFixed(2)}</span>
-              <span>{parseFloat(ask.quantity).toFixed(6)}</span>
-            </div>
-          ))}
+          <div className="orderbook-header">
+            <span>Price(USDT)</span>
+            <span>Amount(BTC)</span>
+            <span>Total</span>
+          </div>
+          <div>
+            {orderBook.bids.map((bid, index) => {
+              const depthWidth = (parseFloat(bid.total) / maxTotal * 100).toFixed(2);
+              return (
+                <div key={index} className="orderbook-row trend-up">
+                  <div 
+                    className="depth-visualization" 
+                    style={{
+                      width: `${depthWidth}%`,
+                      backgroundColor: 'rgba(76, 175, 80, 0.1)'
+                    }}
+                  />
+                  <span className="orderbook-price">${parseFloat(bid.price).toFixed(2)}</span>
+                  <span className="orderbook-amount">{parseFloat(bid.quantity).toFixed(6)}</span>
+                  <span className="orderbook-total">{bid.total}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

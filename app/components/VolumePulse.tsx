@@ -1,126 +1,104 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import useWebSocket from 'react-use-websocket';
-import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
+import { useWebSocketManager } from '../hooks/useWebSocketManager';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-interface VolumeData {
-  timestamp: number;
+interface TimeWindow {
   volume: number;
-  trades: number;
+  timestamp: number;
 }
 
+const WINDOW_SIZE = 20000; // 20 seconds
+const NUM_WINDOWS = 3;
+
 const VolumePulse: React.FC = () => {
-  const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
+  const [timeWindows, setTimeWindows] = useState<TimeWindow[]>(
+    Array(NUM_WINDOWS).fill(null).map(() => ({ volume: 0, timestamp: Date.now() }))
+  );
+  const [isLoading, setIsLoading] = useState(true);
   const symbol = 'btcusdt';
-  const wsUrl = `wss://fstream.binance.com/ws/${symbol}@aggTrade`;
 
-  const { lastMessage } = useWebSocket(wsUrl);
+  const { error } = useWebSocketManager(`${symbol}@aggTrade`, {
+    onMessage: (trade) => {
+      const volume = parseFloat(trade.q);
+      const now = Date.now();
 
-  useEffect(() => {
-    if (lastMessage) {
-      const trade = JSON.parse(lastMessage.data);
-      const volume = parseFloat(trade.q) * parseFloat(trade.p); // quantity * price
-
-      setVolumeData(prev => {
-        const now = Date.now();
-        const newData = [...prev];
+      setTimeWindows(prev => {
+        const newWindows = [...prev];
+        const currentWindowIndex = Math.floor((now % (WINDOW_SIZE * NUM_WINDOWS)) / WINDOW_SIZE);
         
-        // Group trades into 10-second buckets
-        const currentBucket = Math.floor(now / 10000) * 10000;
-        const lastEntry = newData[newData.length - 1];
-
-        if (lastEntry && lastEntry.timestamp === currentBucket) {
-          lastEntry.volume += volume;
-          lastEntry.trades += 1;
-        } else {
-          newData.push({
-            timestamp: currentBucket,
-            volume: volume,
-            trades: 1
-          });
-        }
-
-        // Keep last 30 buckets (5 minutes) of data
-        return newData.slice(-30);
-      });
-    }
-  }, [lastMessage]);
-
-  const chartData = {
-    labels: volumeData.map(d => new Date(d.timestamp).toLocaleTimeString()),
-    datasets: [
-      {
-        label: 'Volume',
-        data: volumeData.map(d => d.volume),
-        backgroundColor: volumeData.map(d => 
-          d.volume > (d.trades * 1000) ? 'rgba(75, 192, 75, 0.5)' : 'rgba(255, 99, 132, 0.5)'
-        ),
-        borderColor: volumeData.map(d => 
-          d.volume > (d.trades * 1000) ? 'rgb(75, 192, 75)' : 'rgb(255, 99, 132)'
-        ),
-        borderWidth: 1
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'BTC/USDT Volume Pulse (10s)'
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const dataIndex = context.dataIndex;
-            const data = volumeData[dataIndex];
-            return [
-              `Volume: ${data.volume.toFixed(2)} USDT`,
-              `Trades: ${data.trades}`,
-              `Avg Size: ${(data.volume / data.trades).toFixed(2)} USDT`
-            ];
+        // Reset old windows
+        for (let i = 0; i < NUM_WINDOWS; i++) {
+          if (now - newWindows[i].timestamp > WINDOW_SIZE * NUM_WINDOWS) {
+            newWindows[i] = { volume: 0, timestamp: now };
           }
         }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Volume (USDT)'
+
+        // Update current window
+        if (now - newWindows[currentWindowIndex].timestamp <= WINDOW_SIZE) {
+          newWindows[currentWindowIndex].volume += volume;
+        } else {
+          newWindows[currentWindowIndex] = { volume, timestamp: now };
         }
-      }
-    }
-  };
+
+        return newWindows;
+      });
+      setIsLoading(false);
+    },
+    onOpen: () => setIsLoading(false)
+  });
+
+  // Rotate windows periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setTimeWindows(prev => {
+        const newWindows = [...prev];
+        const currentWindowIndex = Math.floor((now % (WINDOW_SIZE * NUM_WINDOWS)) / WINDOW_SIZE);
+        newWindows[currentWindowIndex] = { volume: 0, timestamp: now };
+        return newWindows;
+      });
+    }, WINDOW_SIZE);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-text">Loading volume pulse data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <div className="error-text">{error}</div>
+      </div>
+    );
+  }
+
+  const maxVolume = Math.max(...timeWindows.map(w => w.volume));
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Volume Pulse</h2>
-      <Bar data={chartData} options={options} />
+    <div className="volume-pulse">
+      {timeWindows.map((window, index) => {
+        const percentage = maxVolume > 0 ? (window.volume / maxVolume * 100).toFixed(2) : '0';
+        const isSurge = maxVolume > 0 && window.volume > maxVolume * 0.8;
+
+        return (
+          <div key={index} className="pulse-bar">
+            <div 
+              className="pulse-fill"
+              style={{ width: `${percentage}%` }}
+            />
+            <span className={`pulse-label ${isSurge ? 'volume-surge' : ''}`}>
+              {window.volume.toFixed(4)} BTC
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 };

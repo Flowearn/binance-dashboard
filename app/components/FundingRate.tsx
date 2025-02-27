@@ -1,49 +1,55 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useWebSocketManager } from '../hooks/useWebSocketManager';
 
 interface FundingRateData {
-  symbol: string;
-  fundingRate: string;
-  nextFundingTime: number;
+  rate: number;
+  nextSettlement: Date;
 }
 
 const FundingRate: React.FC = () => {
-  const [fundingRates, setFundingRates] = useState<FundingRateData[]>([]);
+  const [fundingRate, setFundingRate] = useState<FundingRateData>({
+    rate: 0,
+    nextSettlement: new Date()
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const symbol = 'btcusdt';
 
-  useEffect(() => {
-    const fetchFundingRates = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setFundingRates(data);
-      } catch (error) {
-        console.error('Error fetching funding rates:', error);
-        setError('Failed to fetch funding rates. Please try again later.');
-      } finally {
+  const { error } = useWebSocketManager(`${symbol}@markPrice@1s`, {
+    onMessage: (data) => {
+      if (data.r) {
+        const rate = parseFloat(data.r) * 100;
+        const nextSettlement = new Date(Math.ceil(Date.now() / (8 * 3600000)) * 8 * 3600000);
+        setFundingRate({ rate, nextSettlement });
         setIsLoading(false);
       }
-    };
+    },
+    onOpen: () => setIsLoading(false)
+  });
 
-    fetchFundingRates();
-    const interval = setInterval(fetchFundingRates, 60000); // Update every minute
-
-    return () => clearInterval(interval);
+  // Initial funding rate fetch
+  useEffect(() => {
+    fetch('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT')
+      .then(response => response.json())
+      .then(data => {
+        const rate = parseFloat(data.lastFundingRate) * 100;
+        const nextSettlement = new Date(Math.ceil(Date.now() / (8 * 3600000)) * 8 * 3600000);
+        setFundingRate({ rate, nextSettlement });
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching funding rate:', error);
+        setIsLoading(false);
+      });
   }, []);
 
   if (isLoading) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Funding Rates</h2>
-        <div className="flex justify-center items-center h-[200px]">
-          <div className="text-gray-500">Loading funding rates...</div>
+      <div className="box">
+        <h2>Funding Rate</h2>
+        <div className="loading-container">
+          <div className="loading-text">Loading funding rate data...</div>
         </div>
       </div>
     );
@@ -51,41 +57,28 @@ const FundingRate: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Funding Rates</h2>
-        <div className="flex justify-center items-center h-[200px]">
-          <div className="text-red-500">{error}</div>
+      <div className="box">
+        <h2>Funding Rate</h2>
+        <div className="error-container">
+          <div className="error-text">{error}</div>
         </div>
       </div>
     );
   }
 
+  const rateClass = fundingRate.rate >= 0 ? 'trend-up' : 'trend-down';
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Funding Rates</h2>
-      <div className="overflow-auto max-h-[400px]">
-        <table className="min-w-full">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2">Symbol</th>
-              <th className="px-4 py-2">Funding Rate</th>
-              <th className="px-4 py-2">Next Funding</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fundingRates.map((rate) => (
-              <tr key={rate.symbol} className="border-b">
-                <td className="px-4 py-2">{rate.symbol}</td>
-                <td className="px-4 py-2">
-                  {(parseFloat(rate.fundingRate) * 100).toFixed(4)}%
-                </td>
-                <td className="px-4 py-2">
-                  {new Date(rate.nextFundingTime).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="box">
+      <h2>Funding Rate</h2>
+      <div className={rateClass} style={{ fontSize: '24px', textAlign: 'center', padding: 'var(--spacing-lg)' }}>
+        Current Rate: {fundingRate.rate.toFixed(4)}%
+      </div>
+      <div className="next-funding" style={{ textAlign: 'center' }}>
+        Next Settlement: {fundingRate.nextSettlement.toLocaleTimeString()}
+      </div>
+      <div style={{ fontSize: '12px', color: '#666', marginTop: '8px', textAlign: 'center' }}>
+        (Positive: Longs pay Shorts, Negative: Shorts pay Longs)
       </div>
     </div>
   );

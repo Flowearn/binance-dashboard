@@ -1,122 +1,83 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import useWebSocket from 'react-use-websocket';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
+import React, { useState } from 'react';
+import { useWebSocketManager } from '../hooks/useWebSocketManager';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-interface TradeData {
-  timestamp: number;
-  buyVolume: number;
-  sellVolume: number;
+interface VolumeData {
+  superLarge: number;
+  large: number;
+  medium: number;
+  small: number;
 }
 
 const TradeVolume: React.FC = () => {
-  const [tradeHistory, setTradeHistory] = useState<TradeData[]>([]);
+  const [volumeData, setVolumeData] = useState<VolumeData>({
+    superLarge: 0,
+    large: 0,
+    medium: 0,
+    small: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const symbol = 'btcusdt';
-  const wsUrl = `wss://fstream.binance.com/ws/${symbol}@aggTrade`;
 
-  const { lastMessage } = useWebSocket(wsUrl);
+  const { error } = useWebSocketManager(`${symbol}@aggTrade`, {
+    onMessage: (trade) => {
+      const volume = parseFloat(trade.q);
+      const price = parseFloat(trade.p);
+      const value = volume * price;
 
-  useEffect(() => {
-    if (lastMessage) {
-      const trade = JSON.parse(lastMessage.data);
-      const isBuyerMaker = trade.m; // true for sell, false for buy
-      const volume = parseFloat(trade.q) * parseFloat(trade.p); // quantity * price
-
-      setTradeHistory(prev => {
-        const now = Date.now();
-        const newData = [...prev];
-        
-        // Group trades into 1-minute buckets
-        const currentMinute = Math.floor(now / 60000) * 60000;
-        const lastEntry = newData[newData.length - 1];
-
-        if (lastEntry && lastEntry.timestamp === currentMinute) {
-          if (isBuyerMaker) {
-            lastEntry.sellVolume += volume;
-          } else {
-            lastEntry.buyVolume += volume;
-          }
+      setVolumeData(prev => {
+        const newData = { ...prev };
+        if (value > 100000) {
+          newData.superLarge += volume;
+        } else if (value > 10000) {
+          newData.large += volume;
+        } else if (value > 1000) {
+          newData.medium += volume;
         } else {
-          newData.push({
-            timestamp: currentMinute,
-            buyVolume: isBuyerMaker ? 0 : volume,
-            sellVolume: isBuyerMaker ? volume : 0
-          });
+          newData.small += volume;
         }
-
-        // Keep last 30 minutes of data
-        return newData.slice(-30);
+        return newData;
       });
-    }
-  }, [lastMessage]);
-
-  const chartData = {
-    labels: tradeHistory.map(d => new Date(d.timestamp).toLocaleTimeString()),
-    datasets: [
-      {
-        label: 'Buy Volume',
-        data: tradeHistory.map(d => d.buyVolume),
-        borderColor: 'rgb(75, 192, 75)',
-        backgroundColor: 'rgba(75, 192, 75, 0.5)',
-        tension: 0.1
-      },
-      {
-        label: 'Sell Volume',
-        data: tradeHistory.map(d => d.sellVolume),
-        borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        tension: 0.1
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'BTC/USDT Trade Volume Classification'
-      }
+      setIsLoading(false);
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Volume (USDT)'
-        }
-      }
-    }
-  };
+    onOpen: () => setIsLoading(false)
+  });
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-text">Loading volume data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <div className="error-text">{error}</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4">Trade Volume Classification</h2>
-      <Line data={chartData} options={options} />
+    <div className="trade-volume">
+      <div className="volume-category">
+        <span className="volume-label">Super Large (&gt;$100K)</span>
+        <span className="volume-value">{volumeData.superLarge.toFixed(4)} BTC</span>
+      </div>
+      <div className="volume-category">
+        <span className="volume-label">Large ($10K-$100K)</span>
+        <span className="volume-value">{volumeData.large.toFixed(4)} BTC</span>
+      </div>
+      <div className="volume-category">
+        <span className="volume-label">Medium ($1K-$10K)</span>
+        <span className="volume-value">{volumeData.medium.toFixed(4)} BTC</span>
+      </div>
+      <div className="volume-category">
+        <span className="volume-label">Small (&lt;$1K)</span>
+        <span className="volume-value">{volumeData.small.toFixed(4)} BTC</span>
+      </div>
     </div>
   );
 };
