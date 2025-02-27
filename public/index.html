@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Crypto Market Monitor" />
+    <title>Crypto Market Monitor</title>
+    <!-- 添加 TradingView 轻量级图表库 -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- 添加favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="apple-touch-icon" href="assets/logo.svg">
+    <style>
+      :root {
+        --primary-color: #1976d2;
+        --primary-light: #e3f2fd;
+        --text-color: #ffffff;
+        --spacing-sm: 8px;
+        --spacing-md: 16px;
+        --spacing-lg: 24px;
+        --spacing-xl: 32px;
+      }
+      
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: var(--primary-light);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: white;
+        padding: var(--spacing-xl);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        padding: var(--spacing-lg);
+        border-radius: 8px;
+      }
+      .content {
+        padding: var(--spacing-lg);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-xl);
+        margin: var(--spacing-xl) 0;
+      }
+      .box {
+        background: #fff;
+        padding: var(--spacing-lg);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 2px solid var(--primary-color);
+      }
+      .box h2 {
+        color: var(--primary-color);
+        margin: 0 0 var(--spacing-lg) 0;
+        padding-bottom: var(--spacing-md);
+        border-bottom: 2px solid var(--primary-light);
+      }
+      #orderbook {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-lg);
+      }
+      .orderbook-header {
+        font-weight: bold;
+        margin-bottom: var(--spacing-md);
+        color: var(--primary-color);
+      }
+      .asks div, .bids div {
+        padding: var(--spacing-sm);
+        margin: var(--spacing-sm) 0;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .price {
+        font-weight: bold;
+      }
+      .amount {
+        opacity: 0.8;
+      }
+      #chart {
+        height: 400px;
+        margin: var(--spacing-md) 0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      #funding-rate {
+        font-size: 24px;
+        text-align: center;
+        padding: var(--spacing-lg);
+        color: var(--primary-color);
+      }
+      .next-funding {
+        font-size: 14px;
+        color: #666;
+        margin-top: var(--spacing-md);
+      }
+      .trend-up {
+        color: #4CAF50;
+      }
+      .trend-down {
+        color: #f44336;
+      }
+      .loading {
+        text-align: center;
+        color: var(--primary-color);
+        font-style: italic;
+      }
+      /* 添加聊天框相关样式 */
+      .chat-container {
+        margin-top: var(--spacing-xl);
+        border: 2px solid var(--primary-color);
+        border-radius: 8px;
+        padding: var(--spacing-lg);
+        background: white;
+      }
+
+      .chat-header {
+        color: var(--primary-color);
+        margin: 0 0 var(--spacing-lg) 0;
+        padding-bottom: var(--spacing-md);
+        border-bottom: 2px solid var(--primary-light);
+      }
+
+      .chat-messages {
+        height: 200px;
+        overflow-y: auto;
+        padding: var(--spacing-md);
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: var(--spacing-md);
+      }
+
+      .message {
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-sm);
+        border-radius: 4px;
+      }
+
+      .user-message {
+        background: var(--primary-light);
+        margin-left: 20%;
+        padding: 10px;
+        border-radius: 10px 10px 0 10px;
+      }
+
+      .ai-message {
+        background: white;
+        margin-right: 20%;
+        padding: 10px;
+        border-radius: 10px 10px 10px 0;
+        border: 1px solid #e0e0e0;
+      }
+
+      .chat-input-container {
+        display: flex;
+        gap: var(--spacing-md);
+      }
+
+      .chat-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .chat-submit {
+        padding: 10px 20px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .chat-submit:hover {
+        background: #1565c0;
+      }
+
+      .message-time {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      /* 添加订单簿相关样式 */
+      .orderbook-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .orderbook-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        font-weight: bold;
+        padding: var(--spacing-sm);
+        border-bottom: 1px solid #eee;
+      }
+
+      .orderbook-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 4px var(--spacing-sm);
+        font-family: monospace;
+      }
+
+      .orderbook-price {
+        text-align: left;
+      }
+
+      .orderbook-amount {
+        text-align: right;
+      }
+
+      .orderbook-total {
+        text-align: right;
+        opacity: 0.7;
+      }
+
+      .depth-visualization {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 0;
+        opacity: 0.2;
+      }
+
+      .orderbook-row {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* 添加新模块样式 */
+      .trade-volume {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+      }
+
+      .volume-category {
+        padding: var(--spacing-sm);
+        border-radius: 4px;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .volume-label {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .volume-value {
+        font-weight: bold;
+        font-family: monospace;
+      }
+
+      .volume-pulse {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .pulse-bar {
+        height: 24px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .pulse-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: var(--primary-color);
+        transition: width 0.3s ease;
+      }
+
+      .pulse-label {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #666;
+        z-index: 1;
+      }
+
+      .volume-surge {
+        color: #f44336;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+
+      /* 添加爆仓点位分布样式 */
+      .liquidation-points {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+      }
+
+      .liquidation-bar {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+      }
+
+      .liquidation-price {
+        min-width: 120px;
+        font-family: monospace;
+      }
+
+      .liquidation-volume {
+        flex: 1;
+        height: 24px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .liquidation-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transition: width 0.3s ease;
+      }
+
+      .liquidation-long .liquidation-fill {
+        background: rgba(76, 175, 80, 0.3);
+      }
+
+      .liquidation-short .liquidation-fill {
+        background: rgba(244, 67, 54, 0.3);
+      }
+
+      .liquidation-value {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #666;
+        z-index: 1;
+      }
+
+      .liquidation-type {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: white;
+      }
+
+      .type-long {
+        background: #4CAF50;
+      }
+
+      .type-short {
+        background: #f44336;
+      }
+
+      .chart-controls {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px solid var(--primary-light);
+      }
+
+      .interval-selector {
+        display: flex;
+        gap: 5px;
+      }
+
+      .interval-btn {
+        padding: 5px 10px;
+        border: 1px solid var(--primary-color);
+        background: white;
+        color: var(--primary-color);
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+      }
+
+      .interval-btn:hover {
+        background: var(--primary-light);
+      }
+
+      .interval-btn.active {
+        background: var(--primary-color);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root">
+      <div class="container">
+        <header class="header">
+          <!-- 添加logo到header -->
+          <div class="logo-container">
+            <img src="assets/logo.svg" alt="Crypto Market Monitor Logo" class="logo">
+          </div>
+          <h1>Crypto Market Monitor</h1>
+          <p>BTC/USDT Perpetual Contract Real-time Data</p>
+        </header>
+        <div class="content">
+          <div class="box">
+            <h2>Price Chart</h2>
+            <div class="chart-controls">
+              <div class="interval-selector">
+                <button class="interval-btn" data-interval="1m">1m</button>
+                <button class="interval-btn" data-interval="15m">15m</button>
+                <button class="interval-btn" data-interval="1h">1h</button>
+                <button class="interval-btn" data-interval="4h">4h</button>
+                <button class="interval-btn" data-interval="1d">1D</button>
+              </div>
+            </div>
+            <div id="chart"></div>
+          </div>
+          
+          <div class="grid">
+            <div class="box">
+              <h2>Order Book</h2>
+              <div id="orderbook">
+                <div>
+                  <div class="orderbook-header">
+                    <span>Price(USDT)</span>
+                    <span>Amount(BTC)</span>
+                    <span>Total</span>
+                  </div>
+                  <div class="asks"></div>
+                </div>
+                <div>
+                  <div class="orderbook-header">
+                    <span>Price(USDT)</span>
+                    <span>Amount(BTC)</span>
+                    <span>Total</span>
+                  </div>
+                  <div class="bids"></div>
+                </div>
+              </div>
+            </div>
+            <div class="box">
+              <h2>Funding Rate</h2>
+              <div id="funding-rate"></div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="box">
+              <h2>Trade Volume Classification</h2>
+              <div class="trade-volume" id="volumeClassification">
+                <div class="volume-category">
+                  <span class="volume-label">Super Large (>$100K)</span>
+                  <span class="volume-value" id="superLarge">0</span>
+                </div>
+                <div class="volume-category">
+                  <span class="volume-label">Large ($10K-$100K)</span>
+                  <span class="volume-value" id="large">0</span>
+                </div>
+                <div class="volume-category">
+                  <span class="volume-label">Medium ($1K-$10K)</span>
+                  <span class="volume-value" id="medium">0</span>
+                </div>
+                <div class="volume-category">
+                  <span class="volume-label">Small (<$1K)</span>
+                  <span class="volume-value" id="small">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="box">
+              <h2>Volume Pulse</h2>
+              <div class="volume-pulse" id="volumePulse">
+                <div class="pulse-bar">
+                  <div class="pulse-fill" style="width: 0%"></div>
+                  <span class="pulse-label">0 BTC</span>
+                </div>
+                <div class="pulse-bar">
+                  <div class="pulse-fill" style="width: 0%"></div>
+                  <span class="pulse-label">0 BTC</span>
+                </div>
+                <div class="pulse-bar">
+                  <div class="pulse-fill" style="width: 0%"></div>
+                  <span class="pulse-label">0 BTC</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="box">
+              <h2>Liquidation Points Distribution</h2>
+              <div class="liquidation-points" id="liquidationPoints">
+                <!-- 动态内容将通过 JavaScript 填充 -->
+              </div>
+            </div>
+            <div class="box">
+              <h2>Liquidation Summary</h2>
+              <div id="liquidationSummary" style="padding: 20px; text-align: center;">
+                <div style="font-size: 18px; margin-bottom: 15px;">
+                  Total Liquidation Value (24h)
+                </div>
+                <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);">
+                  $<span id="totalLiquidation">0</span>
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: space-around;">
+                  <div>
+                    <div class="liquidation-type type-long">LONG</div>
+                    <div style="margin-top: 8px;">$<span id="longLiquidation">0</span></div>
+                  </div>
+                  <div>
+                    <div class="liquidation-type type-short">SHORT</div>
+                    <div style="margin-top: 8px;">$<span id="shortLiquidation">0</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 添加聊天框组件 -->
+          <div class="chat-container">
+            <h2 class="chat-header">Market Analysis Assistant</h2>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message ai-message">
+                Hello! I'm your market analysis assistant. Feel free to ask me about current market conditions or trading strategies.
+                <div class="message-time">System Message</div>
+              </div>
+            </div>
+            <div class="chat-input-container">
+              <input type="text" class="chat-input" id="chatInput" placeholder="Ask about market analysis...">
+              <button class="chat-submit" id="chatSubmit">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 初始化变量
+      const symbol = 'btcusdt';
+      const depthElement = document.getElementById('orderbook');
+      const asksElement = depthElement.querySelector('.asks');
+      const bidsElement = depthElement.querySelector('.bids');
+      const fundingRateElement = document.getElementById('funding-rate');
+      
+      // 修改图表初始化部分
+      const chartContainer = document.getElementById('chart');
+      const chart = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth,
+        height: 400,
+        layout: {
+          background: { color: '#ffffff' },
+          textColor: '#333',
+        },
+        grid: {
+          vertLines: { color: '#f0f0f0' },
+          horzLines: { color: '#f0f0f0' },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+          borderColor: '#ddd',
+        },
+        timeScale: {
+          borderColor: '#ddd',
+        },
+      });
+
+      // 创建K线图系列
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350'
+      });
+
+      // API 配置
+      const API_CONFIG = {
+        BACKEND_URL: 'http://localhost:3000',
+        WS_URL: 'wss://fstream.binance.com/ws',
+        SYMBOL: 'BTCUSDT',
+        SYMBOL_LOWER: 'btcusdt'
+      };
+
+      // WebSocket 管理器
+      class WebSocketManager {
+        constructor() {
+          this.connections = new Map();
+          this.reconnectAttempts = new Map();
+          this.maxReconnectAttempts = 5;
+        }
+
+        connect(endpoint, handler) {
+          const wsEndpoint = `${API_CONFIG.WS_URL}/${endpoint}`;
+          console.log(`Connecting to ${wsEndpoint}`);
+
+          const ws = new WebSocket(wsEndpoint);
+          
+          ws.onopen = () => {
+            console.log(`Connected to ${endpoint}`);
+            this.reconnectAttempts.set(endpoint, 0);
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              handler(data);
+            } catch (error) {
+              console.error('Error processing message:', error);
+            }
+          };
+
+          ws.onerror = (error) => {
+            console.error(`WebSocket Error (${endpoint}):`, error);
+          };
+
+          ws.onclose = () => {
+            console.log(`WebSocket Closed (${endpoint})`);
+            const attempts = (this.reconnectAttempts.get(endpoint) || 0) + 1;
+            this.reconnectAttempts.set(endpoint, attempts);
+
+            if (attempts <= this.maxReconnectAttempts) {
+              console.log(`Reconnecting... Attempt ${attempts}`);
+              setTimeout(() => this.connect(endpoint, handler), 5000);
+            } else {
+              console.error(`Max reconnection attempts reached for ${endpoint}`);
+            }
+          };
+
+          this.connections.set(endpoint, ws);
+        }
+
+        disconnect(endpoint) {
+          const ws = this.connections.get(endpoint);
+          if (ws) {
+            ws.close();
+            this.connections.delete(endpoint);
+          }
+        }
+      }
+
+      const wsManager = new WebSocketManager();
+
+      // REST API 请求函数
+      async function fetchAPI(endpoint) {
+        try {
+          const response = await fetch(`${API_CONFIG.BACKEND_URL}${endpoint}`);
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          console.error('API request failed:', error);
+          return null;
+        }
+      }
+
+      // K线图相关变量
+      let currentInterval = '1m';
+      const intervalButtons = document.querySelectorAll('.interval-btn');
+
+      // 初始化K线图
+      async function initializeChart() {
+        try {
+          // 获取历史数据
+          const response = await fetch(`/api/historical-klines?interval=${currentInterval}&limit=1000`);
+          const data = await response.json();
+          
+          // 设置K线图数据
+          candleSeries.setData(data.map(k => ({
+            time: k.timestamp / 1000,
+            open: k.open,
+            high: k.high,
+            low: k.low,
+            close: k.close
+          })));
+        } catch (error) {
+          console.error('Error initializing chart:', error);
+        }
+      }
+
+      // 切换时间周期
+      async function switchInterval(interval) {
+        currentInterval = interval;
+        
+        // 更新按钮状态
+        intervalButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.interval === interval);
+        });
+
+        try {
+          // 获取新时间周期的数据
+          const response = await fetch(`/api/historical-klines?interval=${interval}&limit=1000`);
+          const data = await response.json();
+          
+          // 更新K线图
+          candleSeries.setData(data.map(k => ({
+            time: k.timestamp / 1000,
+            open: k.open,
+            high: k.high,
+            low: k.low,
+            close: k.close
+          })));
+        } catch (error) {
+          console.error('Error switching interval:', error);
+        }
+      }
+
+      // 添加事件监听器
+      intervalButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const interval = button.dataset.interval;
+          switchInterval(interval);
+        });
+      });
+
+      // 设置默认选中的时间周期
+      document.querySelector(`[data-interval="${currentInterval}"]`).classList.add('active');
+
+      // 在 WebSocket 数据处理中添加时间周期判断
+      binanceService.on('data', (data) => {
+        if (data.type === 'kline' && data.interval === currentInterval) {
+          candleSeries.update({
+            time: data.timestamp / 1000,
+            open: data.open,
+            high: data.high,
+            low: data.low,
+            close: data.close
+          });
+        }
+      });
+
+      // 初始化图表
+      initializeChart().catch(console.error);
+
+      // 订单簿数据处理
+      function setupOrderBookStream() {
+        const wsEndpoint = `${API_CONFIG.SYMBOL_LOWER}@depth20@100ms`;
+        wsManager.connect(wsEndpoint, (data) => {
+          const formattedData = {
+            asks: data.asks.map(([price, amount]) => ({
+              price: parseFloat(price).toFixed(2),
+              amount: parseFloat(amount).toFixed(4),
+              total: '0'
+            })),
+            bids: data.bids.map(([price, amount]) => ({
+              price: parseFloat(price).toFixed(2),
+              amount: parseFloat(amount).toFixed(4),
+              total: '0'
+            }))
+          };
+
+          // 计算累计值
+          let askTotal = 0;
+          let bidTotal = 0;
+          formattedData.asks.forEach(ask => {
+            askTotal += parseFloat(ask.amount);
+            ask.total = askTotal.toFixed(4);
+          });
+          formattedData.bids.forEach(bid => {
+            bidTotal += parseFloat(bid.amount);
+            bid.total = bidTotal.toFixed(4);
+          });
+
+          updateOrderBook(formattedData);
+        });
+      }
+
+      // 资金费率数据处理
+      async function setupFundingRateStream() {
+        try {
+          // 获取当前资金费率
+          const endpoint = `/fapi/v1/premiumIndex?symbol=${API_CONFIG.SYMBOL}`;
+          const wsEndpoint = `${API_CONFIG.SYMBOL_LOWER}@markPrice@1s`;
+
+          const initialData = await fetchAPI(endpoint);
+          if (initialData) {
+            updateFundingRate(parseFloat(initialData.lastFundingRate) * 100);
+          }
+
+          // 订阅实时资金费率
+          wsManager.connect(wsEndpoint, (data) => {
+            updateFundingRate(parseFloat(data.r) * 100);
+          });
+        } catch (error) {
+          console.error('Error setting up funding rate stream:', error);
+        }
+      }
+
+      // 交易量分析处理
+      function setupVolumeAnalysis() {
+        const timeWindows = [0, 0, 0];
+        let currentWindow = 0;
+        const windowSize = 20000; // 20秒
+
+        const volumeData = {
+          superLarge: 0,
+          large: 0,
+          medium: 0,
+          small: 0
+        };
+
+        const wsEndpoint = `${API_CONFIG.SYMBOL_LOWER}@aggTrade`;
+        wsManager.connect(wsEndpoint, (trade) => {
+          const volume = parseFloat(trade.q);
+          const price = parseFloat(trade.p);
+          const value = volume * price;
+
+          // 更新交易量分类
+          if (value > 100000) volumeData.superLarge += volume;
+          else if (value > 10000) volumeData.large += volume;
+          else if (value > 1000) volumeData.medium += volume;
+          else volumeData.small += volume;
+
+          // 更新成交量脉冲
+          timeWindows[currentWindow] += volume;
+
+          updateVolumeClassification(volumeData);
+        });
+
+        // 定期更新时间窗口
+        setInterval(() => {
+          currentWindow = (currentWindow + 1) % 3;
+          timeWindows[currentWindow] = 0;
+          updateVolumePulse(timeWindows);
+        }, windowSize);
+      }
+
+      // 初始化所有数据流
+      async function initializeDataStreams() {
+        try {
+          await setupKlineStream();
+          setupOrderBookStream();
+          await setupFundingRateStream();
+          setupVolumeAnalysis();
+        } catch (error) {
+          console.error('Error initializing data streams:', error);
+        }
+      }
+
+      // 启动数据流
+      initializeDataStreams().catch(console.error);
+
+      // 更新显示函数
+      function updateOrderBook(data) {
+        asksElement.innerHTML = '';
+        bidsElement.innerHTML = '';
+        
+        // 找到最大总量用于深度图可视化
+        const maxTotal = Math.max(
+          parseFloat(data.asks[data.asks.length - 1].total),
+          parseFloat(data.bids[data.bids.length - 1].total)
+        );
+        
+        // 更新卖单
+        data.asks.forEach(ask => {
+          const depthWidth = (parseFloat(ask.total) / maxTotal * 100).toFixed(2);
+          asksElement.innerHTML += `
+            <div class="orderbook-row trend-down">
+              <div class="depth-visualization" style="width: ${depthWidth}%; background-color: rgba(244, 67, 54, 0.1);"></div>
+              <span class="orderbook-price">$${ask.price}</span>
+              <span class="orderbook-amount">${ask.amount}</span>
+              <span class="orderbook-total">${ask.total}</span>
+            </div>`;
+        });
+        
+        // 更新买单
+        data.bids.forEach(bid => {
+          const depthWidth = (parseFloat(bid.total) / maxTotal * 100).toFixed(2);
+          bidsElement.innerHTML += `
+            <div class="orderbook-row trend-up">
+              <div class="depth-visualization" style="width: ${depthWidth}%; background-color: rgba(76, 175, 80, 0.1);"></div>
+              <span class="orderbook-price">$${bid.price}</span>
+              <span class="orderbook-amount">${bid.amount}</span>
+              <span class="orderbook-total">${bid.total}</span>
+            </div>`;
+        });
+      }
+
+      function updateFundingRate() {
+        const fundingRate = (Math.random() * 0.002 - 0.001) * 100;
+        const nextFunding = new Date(Math.ceil(Date.now() / (8 * 3600000)) * 8 * 3600000);
+        const rateClass = fundingRate >= 0 ? 'trend-up' : 'trend-down';
+        
+        fundingRateElement.innerHTML = `
+          <div class="${rateClass}">
+            Current Rate: ${fundingRate.toFixed(4)}%
+          </div>
+          <div class="next-funding">
+            Next Settlement: ${nextFunding.toLocaleTimeString()}
+          </div>
+          <div style="font-size: 12px; color: #666; margin-top: 8px;">
+            (Positive: Longs pay Shorts, Negative: Shorts pay Longs)
+          </div>
+        `;
+      }
+
+      // 添加新的变量初始化
+      const volumeElements = {
+        superLarge: document.getElementById('superLarge'),
+        large: document.getElementById('large'),
+        medium: document.getElementById('medium'),
+        small: document.getElementById('small')
+      };
+
+      const volumePulseElement = document.getElementById('volumePulse');
+
+      // 生成交易量分类数据
+      function generateVolumeClassification() {
+        return {
+          superLarge: (Math.random() * 5).toFixed(2),
+          large: (Math.random() * 20).toFixed(2),
+          medium: (Math.random() * 50).toFixed(2),
+          small: (Math.random() * 100).toFixed(2)
+        };
+      }
+
+      // 生成分时脉冲数据
+      function generateVolumePulse() {
+        return [
+          Math.random() * 10,
+          Math.random() * 10,
+          Math.random() * 10
+        ];
+      }
+
+      // 更新交易量分类显示
+      function updateVolumeClassification(data) {
+        volumeElements.superLarge.textContent = `${data.superLarge} BTC`;
+        volumeElements.large.textContent = `${data.large} BTC`;
+        volumeElements.medium.textContent = `${data.medium} BTC`;
+        volumeElements.small.textContent = `${data.small} BTC`;
+      }
+
+      // 更新分时脉冲显示
+      function updateVolumePulse(data) {
+        const maxVolume = Math.max(...data);
+        const bars = volumePulseElement.querySelectorAll('.pulse-bar');
+        
+        data.forEach((volume, index) => {
+          const bar = bars[index];
+          const fill = bar.querySelector('.pulse-fill');
+          const label = bar.querySelector('.pulse-label');
+          const percentage = (volume / maxVolume * 100).toFixed(2);
+          
+          fill.style.width = `${percentage}%`;
+          label.textContent = `${volume.toFixed(2)} BTC`;
+          
+          // 添加放量提示
+          if (volume > maxVolume * 0.8) {
+            label.classList.add('volume-surge');
+          } else {
+            label.classList.remove('volume-surge');
+          }
+        });
+      }
+
+      // 添加爆仓点位相关变量
+      const liquidationPointsElement = document.getElementById('liquidationPoints');
+      const totalLiquidationElement = document.getElementById('totalLiquidation');
+      const longLiquidationElement = document.getElementById('longLiquidation');
+      const shortLiquidationElement = document.getElementById('shortLiquidation');
+
+      // 生成爆仓点位数据
+      function generateLiquidationData() {
+        const basePrice = 40000;
+        const points = [];
+        let totalLong = 0;
+        let totalShort = 0;
+
+        // 生成多头爆仓点位
+        for (let i = 0; i < 3; i++) {
+          const price = basePrice - (1000 + Math.random() * 2000);
+          const volume = Math.random() * 1000000;
+          totalLong += volume;
+          points.push({
+            price: price.toFixed(2),
+            volume: volume.toFixed(0),
+            type: 'long'
+          });
+        }
+
+        // 生成空头爆仓点位
+        for (let i = 0; i < 3; i++) {
+          const price = basePrice + (1000 + Math.random() * 2000);
+          const volume = Math.random() * 1000000;
+          totalShort += volume;
+          points.push({
+            price: price.toFixed(2),
+            volume: volume.toFixed(0),
+            type: 'short'
+          });
+        }
+
+        return {
+          points: points.sort((a, b) => parseFloat(a.price) - parseFloat(b.price)),
+          totalLong: totalLong.toFixed(0),
+          totalShort: totalShort.toFixed(0),
+          total: (totalLong + totalShort).toFixed(0)
+        };
+      }
+
+      // 更新爆仓点位显示
+      function updateLiquidationPoints(data) {
+        liquidationPointsElement.innerHTML = '';
+        const maxVolume = Math.max(...data.points.map(p => parseFloat(p.volume)));
+
+        data.points.forEach(point => {
+          const percentage = (parseFloat(point.volume) / maxVolume * 100).toFixed(2);
+          liquidationPointsElement.innerHTML += `
+            <div class="liquidation-bar liquidation-${point.type}">
+              <span class="liquidation-price">$${point.price}</span>
+              <div class="liquidation-volume">
+                <div class="liquidation-fill" style="width: ${percentage}%"></div>
+                <span class="liquidation-value">$${Number(point.volume).toLocaleString()}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        // 更新汇总数据
+        totalLiquidationElement.textContent = Number(data.total).toLocaleString();
+        longLiquidationElement.textContent = Number(data.totalLong).toLocaleString();
+        shortLiquidationElement.textContent = Number(data.totalShort).toLocaleString();
+      }
+
+      // 自适应图表大小
+      function resizeChart() {
+        const chartContainer = document.getElementById('chart');
+        chart.applyOptions({
+          width: chartContainer.clientWidth,
+          height: chartContainer.clientHeight
+        });
+      }
+
+      window.addEventListener('resize', resizeChart);
+      resizeChart(); // 初始调整大小
+
+      // 设置K线图样式
+      candleSeries.applyOptions({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+        borderVisible: false,
+      });
+
+      // 添加聊天功能相关代码
+      const chatInput = document.getElementById('chatInput');
+      const chatSubmit = document.getElementById('chatSubmit');
+      const chatMessages = document.getElementById('chatMessages');
+
+      function addMessage(message, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+        
+        const currentTime = new Date().toLocaleTimeString();
+        messageDiv.innerHTML = `
+          ${message}
+          <div class="message-time">${currentTime}</div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function handleUserMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        addMessage(message, true);
+        
+        // Clear input
+        chatInput.value = '';
+
+        // Simulate AI response (placeholder)
+        setTimeout(() => {
+          const response = "I'm analyzing the current market conditions. This is a placeholder response. The AI integration will be implemented later.";
+          addMessage(response);
+        }, 1000);
+      }
+
+      chatSubmit.addEventListener('click', handleUserMessage);
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleUserMessage();
+        }
+      });
+
+      // 添加连接状态检查
+      function checkBackendConnection() {
+        fetch(`${API_CONFIG.BACKEND_URL}/api/latest`)
+          .then(response => {
+            if (!response.ok) throw new Error('Backend connection failed');
+            console.log('Backend connected successfully');
+          })
+          .catch(error => {
+            console.error('Backend connection error:', error);
+          });
+      }
+
+      // 页面加载时检查连接
+      document.addEventListener('DOMContentLoaded', () => {
+        checkBackendConnection();
+      });
+    </script>
+  </body>
+</html>
