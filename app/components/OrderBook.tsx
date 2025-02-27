@@ -15,20 +15,67 @@ interface OrderBookData {
 
 const OrderBook: React.FC = () => {
   const [orderBook, setOrderBook] = useState<OrderBookData>({ bids: [], asks: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const symbol = 'btcusdt';
   const wsUrl = `wss://fstream.binance.com/ws/${symbol}@depth20@100ms`;
 
-  const { lastMessage } = useWebSocket(wsUrl);
+  const { lastMessage, readyState } = useWebSocket(wsUrl, {
+    onOpen: () => {
+      console.log('WebSocket connected');
+      setIsLoading(false);
+      setError(null);
+    },
+    onError: () => {
+      console.error('WebSocket error');
+      setError('Failed to connect to WebSocket. Please try again later.');
+      setIsLoading(false);
+    },
+    onClose: () => {
+      console.log('WebSocket disconnected');
+      setError('WebSocket connection closed. Please refresh the page.');
+      setIsLoading(false);
+    },
+    shouldReconnect: (closeEvent) => true,
+    reconnectInterval: 3000
+  });
 
   useEffect(() => {
     if (lastMessage) {
-      const data = JSON.parse(lastMessage.data);
-      setOrderBook({
-        bids: data.bids.map(([price, quantity]: string[]) => ({ price, quantity })),
-        asks: data.asks.map(([price, quantity]: string[]) => ({ price, quantity })),
-      });
+      try {
+        const data = JSON.parse(lastMessage.data);
+        setOrderBook({
+          bids: data.bids.map(([price, quantity]: string[]) => ({ price, quantity })),
+          asks: data.asks.map(([price, quantity]: string[]) => ({ price, quantity })),
+        });
+      } catch (err) {
+        console.error('Error parsing message:', err);
+        setError('Error processing market data. Please refresh the page.');
+      }
     }
   }, [lastMessage]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Order Book (BTC/USDT)</h2>
+        <div className="flex justify-center items-center h-[200px]">
+          <div className="text-gray-500">Connecting to market data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold mb-4">Order Book (BTC/USDT)</h2>
+        <div className="flex justify-center items-center h-[200px]">
+          <div className="text-red-500">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg">
