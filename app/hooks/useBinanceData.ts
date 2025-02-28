@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
-interface UseBinanceDataOptions {
+export interface UseBinanceDataOptions {
   endpoint: string;
   symbol?: string;
   limit?: number;
