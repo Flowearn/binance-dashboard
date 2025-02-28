@@ -16,7 +16,13 @@ export default function Home() {
       <div className="banner">
         <div className="container flex items-center h-12">
           <div className="flex items-center gap-2">
-            <img src="/flow-logo.png" alt="Flow" className="h-6 w-6 object-contain" />
+            <div className="w-7 h-7 relative flex-shrink-0">
+              <img 
+                src="/flow-logo.png" 
+                alt="Flow" 
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
             <h1 className="text-white text-xl font-bold">Flow</h1>
           </div>
         </div>
