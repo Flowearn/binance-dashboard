@@ -16,9 +16,6 @@ const API_ENDPOINTS = {
   trades: 'https://api.binance.com/api/v3/trades',
 };
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
-
 export function useBinanceData<T>({
   endpoint,
   symbol = 'BTCUSDT',
@@ -34,9 +31,21 @@ export function useBinanceData<T>({
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
     let retryCount = 0;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
 
     async function fetchWithRetry(): Promise<T> {
       try {
+        // 首先尝试从本地 API 获取数据
+        const localResponse = await fetch(`/api/market-data?symbol=${symbol}&type=${endpoint}`);
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          if (localData && Object.keys(localData).length > 0) {
+            return localData.data;
+          }
+        }
+
+        // 如果本地没有数据，则从 Binance API 获取
         const params = new URLSearchParams({
           symbol,
           ...(endpoint === 'kline' && { interval }),
@@ -44,10 +53,10 @@ export function useBinanceData<T>({
         });
 
         const response = await fetch(`${API_ENDPOINTS[endpoint]}?${params}`, {
-          mode: 'cors',
+          method: 'GET',
           headers: {
             'Accept': 'application/json',
-          }
+          },
         });
 
         if (!response.ok) {
@@ -55,7 +64,20 @@ export function useBinanceData<T>({
         }
 
         const result = await response.json();
-        retryCount = 0; // Reset retry count on success
+        
+        // 存储数据到本地数据库
+        await fetch('/api/market-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol,
+            type: endpoint,
+            data: result,
+          }),
+        });
+
         return result;
       } catch (err) {
         if (retryCount < MAX_RETRIES) {
@@ -75,12 +97,12 @@ export function useBinanceData<T>({
         if (isMounted) {
           setData(result);
           setError(null);
+          retryCount = 0;
         }
       } catch (err) {
         if (isMounted) {
           console.error('Error fetching data:', err);
           setError(err instanceof Error ? err : new Error('An error occurred'));
-          // Keep the old data if available
           if (!data) {
             setData(null);
           }
@@ -92,22 +114,19 @@ export function useBinanceData<T>({
       }
     }
 
-    async function refreshData() {
-      await fetchData();
-      if (isMounted) {
-        timeoutId = setTimeout(refreshData, refreshInterval);
-      }
-    }
+    fetchData();
 
-    refreshData();
+    if (refreshInterval > 0) {
+      timeoutId = setInterval(fetchData, refreshInterval);
+    }
 
     return () => {
       isMounted = false;
       if (timeoutId) {
-        clearTimeout(timeoutId);
+        clearInterval(timeoutId);
       }
     };
-  }, [endpoint, symbol, interval, limit, refreshInterval, data]);
+  }, [endpoint, symbol, interval, limit, refreshInterval]);
 
   return { data, error, isLoading };
 } 
