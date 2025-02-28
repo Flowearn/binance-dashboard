@@ -46,7 +46,7 @@ const fetcher = async (url: string) => {
 };
 
 export function useBinanceData<T>(options: UseBinanceDataOptions) {
-  const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000 } = options; // 默认刷新间隔改为1秒
+  const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000, interval } = options; // 添加 interval
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
 
@@ -54,6 +54,7 @@ export function useBinanceData<T>(options: UseBinanceDataOptions) {
     endpoint,
     symbol,
     limit: limit.toString(),
+    ...(interval && { interval }), // 有 interval 时才添加到查询参数
   }).toString();
 
   const { data, error, mutate } = useSWR(
