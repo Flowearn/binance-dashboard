@@ -8,6 +8,14 @@ interface UseBinanceDataProps {
   refreshInterval?: number;
 }
 
+const API_ENDPOINTS = {
+  kline: 'https://api.binance.com/api/v3/klines',
+  orderbook: 'https://api.binance.com/api/v3/depth',
+  ticker24h: 'https://api.binance.com/api/v3/ticker/24hr',
+  fundingRate: 'https://fapi.binance.com/fapi/v1/fundingRate',
+  trades: 'https://api.binance.com/api/v3/trades',
+};
+
 export function useBinanceData<T>({
   endpoint,
   symbol = 'BTCUSDT',
@@ -26,13 +34,12 @@ export function useBinanceData<T>({
     async function fetchData() {
       try {
         const params = new URLSearchParams({
-          endpoint,
           symbol,
-          interval,
+          ...(endpoint === 'kline' && { interval }),
           limit: limit.toString(),
         });
 
-        const response = await fetch(`/api/binance?${params}`);
+        const response = await fetch(`${API_ENDPOINTS[endpoint]}?${params}`);
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }

@@ -8,14 +8,6 @@ const nextConfig = {
       'bufferutil': 'commonjs bufferutil',
     })
     return config
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'https://api.binance.com/:path*'
-      }
-    ]
   }
 }
 
