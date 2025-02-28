@@ -26,7 +26,7 @@ export default function Home() {
           <KlineChart />
         </div>
 
-        {/* Order Book & Trade Volume Classification */}
+        {/* Order Book & Trade Volume Classification Container */}
         <div className="grid grid-cols-2 gap-4">
           <div className="box">
             <OrderBook />

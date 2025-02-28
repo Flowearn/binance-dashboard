@@ -26,8 +26,11 @@ export default function TradeVolume() {
               <span>{category.percentage}%</span>
             </div>
             <div 
-              className="volume-bar" 
-              style={{ width: `${category.percentage}%` }}
+              className="volume-bar"
+              style={{ 
+                width: `${category.percentage}%`,
+                backgroundColor: 'var(--light-blue)'
+              }}
             />
           </div>
         ))}

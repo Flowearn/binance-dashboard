@@ -59,6 +59,43 @@ body {
   color: white;
 }
 
+.order-book-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.order-book-column {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.order-book-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.current-price {
+  text-align: center;
+  padding: 0.5rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  font-weight: bold;
+}
+
+.buy {
+  color: #4CAF50;
+}
+
+.sell {
+  color: #F44336;
+}
+
 .volume-bar {
   height: 24px;
   background: var(--light-blue);

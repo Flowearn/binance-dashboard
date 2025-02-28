@@ -38,15 +38,15 @@ export default function OrderBook() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Order Book</h2>
-      <div className="current-price text-xl font-bold text-gray-700 text-center py-2 bg-gray-50 rounded-lg mb-4">
+      <div className="current-price text-xl font-bold text-gray-700">
         {currentPrice.toFixed(2)}
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="order-book-container">
         {/* Sell Orders */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="space-y-1">
+        <div className="order-book-column">
+          <div className="sell space-y-1">
             {sellOrders.map((order, index) => (
-              <div key={index} className="flex justify-between text-sm text-[#F44336]">
+              <div key={index} className="order-book-row">
                 <span>{order.price.toFixed(2)}</span>
                 <span>{order.quantity.toFixed(4)}</span>
               </div>
@@ -55,10 +55,10 @@ export default function OrderBook() {
         </div>
 
         {/* Buy Orders */}
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <div className="space-y-1">
+        <div className="order-book-column">
+          <div className="buy space-y-1">
             {buyOrders.map((order, index) => (
-              <div key={index} className="flex justify-between text-sm text-[#4CAF50]">
+              <div key={index} className="order-book-row">
                 <span>{order.price.toFixed(2)}</span>
                 <span>{order.quantity.toFixed(4)}</span>
               </div>
