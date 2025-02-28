@@ -7,9 +7,17 @@ export async function GET(request: Request) {
   const type = searchParams.get('type') || 'orderbook';
   const startTime = searchParams.get('startTime');
   const endTime = searchParams.get('endTime');
+  const aggregation = searchParams.get('aggregation') as 'hour' | 'day' | 'week' | null;
 
   try {
-    if (startTime && endTime) {
+    if (aggregation) {
+      const data = await DataProcessingService.getAggregatedData(
+        symbol,
+        type,
+        aggregation
+      );
+      return NextResponse.json(data);
+    } else if (startTime && endTime) {
       const data = await DataProcessingService.getHistoricalData(
         symbol,
         type,
@@ -40,7 +48,12 @@ export async function POST(request: Request) {
       case 'orderbook':
         processedData = DataProcessingService.processOrderBookData(data, symbol);
         break;
-      // 添加其他数据类型的处理
+      case 'kline':
+        processedData = DataProcessingService.processKlineData(data, symbol);
+        break;
+      case 'trades':
+        processedData = DataProcessingService.processTradeData(data, symbol);
+        break;
       default:
         processedData = data;
     }
