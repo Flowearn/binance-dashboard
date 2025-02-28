@@ -16,12 +16,15 @@ const API_ENDPOINTS = {
   trades: 'https://api.binance.com/api/v3/trades',
 };
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
 export function useBinanceData<T>({
   endpoint,
   symbol = 'BTCUSDT',
   interval = '1d',
   limit = 100,
-  refreshInterval = 5000, // 默认5秒刷新一次
+  refreshInterval = 5000,
 }: UseBinanceDataProps) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -30,8 +33,9 @@ export function useBinanceData<T>({
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
+    let retryCount = 0;
 
-    async function fetchData() {
+    async function fetchWithRetry(): Promise<T> {
       try {
         const params = new URLSearchParams({
           symbol,
@@ -39,19 +43,47 @@ export function useBinanceData<T>({
           limit: limit.toString(),
         });
 
-        const response = await fetch(`${API_ENDPOINTS[endpoint]}?${params}`);
+        const response = await fetch(`${API_ENDPOINTS[endpoint]}?${params}`, {
+          mode: 'cors',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+
         if (!response.ok) {
-          throw new Error('Failed to fetch data');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
+        retryCount = 0; // Reset retry count on success
+        return result;
+      } catch (err) {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+          return fetchWithRetry();
+        }
+        throw err;
+      }
+    }
+
+    async function fetchData() {
+      if (!isMounted) return;
+      
+      try {
+        const result = await fetchWithRetry();
         if (isMounted) {
           setData(result);
           setError(null);
         }
       } catch (err) {
         if (isMounted) {
+          console.error('Error fetching data:', err);
           setError(err instanceof Error ? err : new Error('An error occurred'));
+          // Keep the old data if available
+          if (!data) {
+            setData(null);
+          }
         }
       } finally {
         if (isMounted) {
@@ -75,7 +107,7 @@ export function useBinanceData<T>({
         clearTimeout(timeoutId);
       }
     };
-  }, [endpoint, symbol, interval, limit, refreshInterval]);
+  }, [endpoint, symbol, interval, limit, refreshInterval, data]);
 
   return { data, error, isLoading };
 } 
