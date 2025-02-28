@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
 // 定义基础URL
 const BINANCE_API = {
@@ -97,9 +97,9 @@ const getApiUrl = (endpoint: string, params: URLSearchParams) => {
   }
 };
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const endpoint = searchParams.get('endpoint');
     
     if (!endpoint) {
