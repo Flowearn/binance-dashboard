@@ -43,6 +43,8 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
     }
 
     const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
       layout: {
         background: { type: ColorType.Solid, color: '#ffffff' },
         textColor: '#333',
@@ -53,14 +55,18 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-      },
-      rightPriceScale: {
-        borderColor: '#ddd',
-      },
-      timeScale: {
-        borderColor: '#ddd',
-        timeVisible: true,
-        secondsVisible: false,
+        vertLine: {
+          width: 1,
+          color: '#2962FF',
+          style: 0,
+          labelBackgroundColor: '#2962FF',
+        },
+        horzLine: {
+          width: 1,
+          color: '#2962FF',
+          style: 0,
+          labelBackgroundColor: '#2962FF',
+        },
       },
       handleScale: {
         mouseWheel: true,
@@ -72,9 +78,19 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
         horzTouchDrag: true,
         vertTouchDrag: true,
       },
+      rightPriceScale: {
+        borderColor: '#ddd',
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      timeScale: {
+        borderColor: '#ddd',
+        timeVisible: true,
+        secondsVisible: false,
+      },
     });
-
-    chart.timeScale().fitContent();
 
     const candlestickSeries = chart.addCandlestickSeries({
       upColor: '#26a69a',
@@ -89,10 +105,9 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
 
     const handleResize = () => {
       if (chartContainerRef.current) {
-        const { clientWidth, clientHeight } = chartContainerRef.current;
         chart.applyOptions({
-          width: clientWidth,
-          height: clientHeight || 400,
+          width: chartContainerRef.current.clientWidth,
+          height: 400,
         });
       }
     };
@@ -183,13 +198,17 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
 
   return (
     <div className="box">
-      <h2>Price Chart</h2>
-      <div className="chart-controls">
-        <div className="interval-selector">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Price Chart</h2>
+        <div className="interval-selector flex space-x-2">
           {INTERVALS.map(interval => (
             <button
               key={interval.value}
-              className={`interval-btn ${currentInterval === interval.value ? 'active' : ''}`}
+              className={`px-3 py-1 rounded ${
+                currentInterval === interval.value
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
               onClick={() => handleIntervalChange(interval.value)}
             >
               {interval.label}
@@ -197,7 +216,27 @@ const KlineChart: React.FC<Props> = ({ symbol }) => {
           ))}
         </div>
       </div>
-      <div ref={chartContainerRef} style={{ width: '100%', height: '400px' }} />
+      <div 
+        ref={chartContainerRef} 
+        className="w-full" 
+        style={{ 
+          height: '400px',
+          position: 'relative'
+        }}
+      >
+        <style jsx>{`
+          :global(.tv-lightweight-charts) {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+          }
+          :global(.tv-lightweight-charts canvas) {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
