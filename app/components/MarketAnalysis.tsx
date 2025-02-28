@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import '../styles/market-analysis.css';
 
 interface Message {
+  id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: number;
+  timestamp: Date;
 }
 
 interface MarketData {
@@ -16,11 +18,18 @@ interface MarketData {
 }
 
 const MarketAnalysis: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: '您好！我是您的市场分析助手。我可以帮您分析当前市场状况，解答您的问题。',
+      timestamp: new Date()
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [marketData, setMarketData] = useState<MarketData | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 获取市场数据
   useEffect(() => {
@@ -50,11 +59,12 @@ const MarketAnalysis: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // 自动滚动到底部
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,69 +72,32 @@ const MarketAnalysis: React.FC = () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
+      id: Date.now().toString(),
       role: 'user',
       content: input,
-      timestamp: Date.now()
+      timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    try {
-      // 构建发送给模型的上下文
-      const context = marketData ? `Current market data:
-- BTC Price: $${marketData.price}
-- 24h Volume: ${marketData.volume24h} BTC
-- 24h Price Change: ${marketData.priceChange24h}%
-- Funding Rate: ${marketData.fundingRate}%
-
-User question: ${input}` : input;
-
-      const response = await fetch('https://your-aws-endpoint.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a cryptocurrency market analyst assistant. Analyze the provided market data and answer questions about market conditions, trends, and potential strategies.'
-            },
-            {
-              role: 'user',
-              content: context
-            }
-          ]
-        })
-      });
-
-      const data = await response.json();
-      
+    // TODO: 这里将来会调用 AWS 上的 deepseek 模型
+    // 目前先模拟一个响应
+    setTimeout(() => {
       const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.choices[0].message.content,
-        timestamp: Date.now()
+        content: '抱歉，我目前还在开发中。很快我就能为您提供专业的市场分析服务。',
+        timestamp: new Date()
       };
-
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Error calling DeepSeek API:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error while processing your request. Please try again later.',
-        timestamp: Date.now()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 1000);
   };
 
   return (
-    <div className="flex flex-col h-[500px]">
+    <div className="market-analysis-chat flex flex-col h-[500px]">
       <h2 className="text-xl font-bold mb-4">Market Analysis Assistant</h2>
       
       {/* 市场数据显示 */}
@@ -153,60 +126,58 @@ User question: ${input}` : input;
         </div>
       )}
 
-      {/* 聊天记录 */}
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto mb-4 bg-gray-50 rounded p-4"
-      >
-        {messages.map((message, index) => (
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map(message => (
           <div
-            key={index}
-            className={`mb-4 ${
-              message.role === 'user' ? 'text-right' : 'text-left'
-            }`}
+            key={message.id}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`inline-block max-w-[80%] p-3 rounded-lg ${
+              className={`chat-message max-w-[80%] rounded-lg p-3 ${
                 message.role === 'user'
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-800'
               }`}
             >
-              {message.content}
-              <div className="text-xs mt-1 opacity-70">
-                {new Date(message.timestamp).toLocaleTimeString()}
-              </div>
+              <p className="text-sm">{message.content}</p>
+              <p className="message-timestamp">
+                {message.timestamp.toLocaleTimeString()}
+              </p>
             </div>
           </div>
         ))}
         {isLoading && (
-          <div className="text-center text-gray-500">
-            Thinking...
+          <div className="flex justify-start">
+            <div className="bg-gray-200 rounded-lg p-3">
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* 输入框 */}
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about market conditions..."
-          className="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          className={`px-6 py-2 rounded font-semibold ${
-            isLoading || !input.trim()
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-          disabled={isLoading || !input.trim()}
-        >
-          Send
-        </button>
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="输入您的问题..."
+            className="chat-input flex-1 p-2 rounded-lg focus:outline-none"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="send-button px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+          >
+            发送
+          </button>
+        </div>
       </form>
     </div>
   );
