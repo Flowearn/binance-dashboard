@@ -64,78 +64,88 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="container">
-      <header className="header">
-        <div className="logo-container">
-          <Image src="/assets/logo.svg" alt="Crypto Market Monitor Logo" width={50} height={50} className="logo" />
-        </div>
-        <h1>Crypto Market Monitor</h1>
-        <p>BTC/USDT Perpetual Contract Real-time Data</p>
-      </header>
-      
-      <div className="content">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold">Binance Futures Dashboard</h2>
-          <div className="relative">
-            <select
-              value={selectedSymbol}
-              onChange={(e) => setSelectedSymbol(e.target.value)}
-              className="block appearance-none w-48 bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <option>Loading...</option>
-              ) : (
-                symbols.map(symbol => (
-                  <option key={symbol.symbol} value={symbol.symbol}>
-                    {symbol.baseAsset}/USDT
-                  </option>
-                ))
-              )}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-              </svg>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Image src="/assets/logo.svg" alt="Crypto Market Monitor Logo" width={50} height={50} className="logo" />
+              <div>
+                <h1 className="text-2xl font-bold">Crypto Market Monitor</h1>
+                <p className="text-gray-600">Real-time Crypto Market Data</p>
+              </div>
+            </div>
+            <div className="relative">
+              <select
+                value={selectedSymbol}
+                onChange={(e) => setSelectedSymbol(e.target.value)}
+                className="block appearance-none w-48 bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <option>Loading...</option>
+                ) : (
+                  symbols.map(symbol => (
+                    <option key={symbol.symbol} value={symbol.symbol}>
+                      {symbol.baseAsset}/USDT
+                    </option>
+                  ))
+                )}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <div className="col-span-2">
-              <KlineChart symbol={selectedSymbol.toLowerCase()} />
-            </div>
-          </ErrorBoundary>
+      </header>
 
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Kline Chart - Full Width */}
+        <section className="w-full">
           <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <OrderBook symbol={selectedSymbol.toLowerCase()} />
+            <KlineChart symbol={selectedSymbol.toLowerCase()} />
           </ErrorBoundary>
+        </section>
 
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <FundingRate symbol={selectedSymbol.toLowerCase()} />
-          </ErrorBoundary>
+        {/* Two Column Layout */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <OrderBook symbol={selectedSymbol.toLowerCase()} />
+            </ErrorBoundary>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <FundingRate symbol={selectedSymbol.toLowerCase()} />
+            </ErrorBoundary>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <TradeVolume symbol={selectedSymbol.toLowerCase()} />
+            </ErrorBoundary>
+          </div>
 
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <TradeVolume symbol={selectedSymbol.toLowerCase()} />
-          </ErrorBoundary>
+          {/* Right Column */}
+          <div className="space-y-6">
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <VolumePulse symbol={selectedSymbol.toLowerCase()} />
+            </ErrorBoundary>
+            <ErrorBoundary FallbackComponent={ErrorFallback}>
+              <LiquidationPoints symbol={selectedSymbol.toLowerCase()} />
+            </ErrorBoundary>
+          </div>
+        </section>
 
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <VolumePulse symbol={selectedSymbol.toLowerCase()} />
-          </ErrorBoundary>
-
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <LiquidationPoints symbol={selectedSymbol.toLowerCase()} />
-          </ErrorBoundary>
-        </div>
-        
-        <div className="grid">
+        {/* Chat Section - Full Width */}
+        <section className="w-full">
           <div className="box">
             <h2>Market Analysis</h2>
             <MarketAnalysis />
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 } 
