@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #2962FF;
+            --secondary-blue: #1E88E5;
+            --light-blue: #E3F2FD;
+            --dark-blue: #1565C0;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .banner {
+            background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .box {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-container {
+            height: 500px;
+            background: white;
+        }
+
+        .interval-button {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border: none;
+            background: var(--light-blue);
+            color: var(--primary-blue);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .interval-button:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .interval-button.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .order-book-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .order-book-column {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .order-book-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            padding: 0.25rem 0;
+            font-size: 0.875rem;
+        }
+
+        .current-price {
+            text-align: center;
+            padding: 0.5rem;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            font-weight: bold;
+        }
+
+        .buy {
+            color: #4CAF50;
+        }
+
+        .sell {
+            color: #F44336;
+        }
+
+        .volume-bar {
+            height: 24px;
+            background: var(--light-blue);
+            border-radius: 4px;
+            margin: 0.25rem 0;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Banner -->
+    <div class="banner text-white">
+        <div class="container flex items-center">
+            <img src="https://via.placeholder.com/48x48" alt="Flow" class="h-12 mr-4">
+            <h1 class="text-2xl font-bold">Flow</h1>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <!-- Kline Chart -->
+        <div class="box">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Price Chart</h2>
+                <div class="space-x-2">
+                    <button class="interval-button active">1D</button>
+                    <button class="interval-button">4H</button>
+                    <button class="interval-button">1H</button>
+                    <button class="interval-button">15M</button>
+                    <button class="interval-button">1M</button>
+                </div>
+            </div>
+            <div class="chart-container"></div>
+        </div>
+
+        <!-- Order Book & Trade Volume Classification Container -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Order Book -->
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">Order Book</h2>
+                <div class="current-price text-xl font-bold text-gray-700">
+                    45,113.50
+                </div>
+                <div class="order-book-container">
+                    <!-- Sell Orders -->
+                    <div class="order-book-column">
+                        <div class="sell space-y-1">
+                            <div class="order-book-row">
+                                <span>45,123.50</span>
+                                <span>2.5431</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,122.30</span>
+                                <span>1.8765</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,121.10</span>
+                                <span>3.2145</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,120.40</span>
+                                <span>1.5432</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,119.80</span>
+                                <span>2.7654</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,118.90</span>
+                                <span>1.9876</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,117.60</span>
+                                <span>2.3456</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,116.40</span>
+                                <span>1.6789</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,115.20</span>
+                                <span>2.8901</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,114.00</span>
+                                <span>1.7654</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Buy Orders -->
+                    <div class="order-book-column">
+                        <div class="buy space-y-1">
+                            <div class="order-book-row">
+                                <span>45,113.00</span>
+                                <span>2.1234</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,112.50</span>
+                                <span>1.5678</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,111.80</span>
+                                <span>2.9012</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,110.90</span>
+                                <span>1.3456</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,109.70</span>
+                                <span>2.7890</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,108.50</span>
+                                <span>1.2345</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,107.30</span>
+                                <span>2.6789</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,106.10</span>
+                                <span>1.4567</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,105.40</span>
+                                <span>2.8901</span>
+                            </div>
+                            <div class="order-book-row">
+                                <span>45,104.20</span>
+                                <span>1.6789</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade Volume Classification -->
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">Trade Volume Classification</h2>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Super Large (>$1M)</span>
+                            <span>25%</span>
+                        </div>
+                        <div class="volume-bar" style="width: 25%"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Large ($100K-$1M)</span>
+                            <span>35%</span>
+                        </div>
+                        <div class="volume-bar" style="width: 35%"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Medium ($10K-$100K)</span>
+                            <span>20%</span>
+                        </div>
+                        <div class="volume-bar" style="width: 20%"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Small ($1K-$10K)</span>
+                            <span>15%</span>
+                        </div>
+                        <div class="volume-bar" style="width: 15%"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>Super Small (<$1K)</span>
+                            <span>5%</span>
+                        </div>
+                        <div class="volume-bar" style="width: 5%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Funding Rate & Volume Pulse -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">Funding Rate</h2>
+                <div class="text-3xl font-bold text-green-500">+0.01%</div>
+            </div>
+
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">Volume Pulse</h2>
+                <div class="space-y-2">
+                    <!-- Volume pulse bars -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Liquidation Points & 24h Change -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Liquidation Points -->
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">Liquidation Points Distribution</h2>
+                <div class="space-y-2">
+                    <!-- Liquidation points visualization -->
+                </div>
+            </div>
+
+            <!-- 24h Change -->
+            <div class="box">
+                <h2 class="text-xl font-bold mb-4">24h Change</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="text-3xl font-bold text-green-500">+2,150.25</div>
+                    <div class="text-2xl font-semibold text-green-500">(+4.76%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface renamed to Ask Me Anything -->
+        <div class="box">
+            <h2 class="text-xl font-bold mb-4">Ask Me Anything</h2>
+            <div class="chat-container bg-gray-50 rounded-lg p-4 mb-4">
+                <!-- Chat messages will go here -->
+            </div>
+            <div class="flex space-x-2">
+                <input type="text" 
+                    placeholder="Ask me anything..." 
+                    class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
