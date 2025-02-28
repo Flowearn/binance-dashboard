@@ -15,9 +15,9 @@ export default function Home() {
       {/* Banner */}
       <div className="banner">
         <div className="container flex items-center h-12">
-          <div className="flex items-center">
-            <h1 className="text-white text-2xl font-bold mr-2">Flow</h1>
-            <img src="/flow-logo.png" alt="Flow" className="h-[28px] w-[28px]" />
+          <div className="flex items-center gap-2">
+            <img src="/flow-logo.png" alt="Flow" className="h-6 w-6 object-contain" />
+            <h1 className="text-white text-xl font-bold">Flow</h1>
           </div>
         </div>
       </div>
