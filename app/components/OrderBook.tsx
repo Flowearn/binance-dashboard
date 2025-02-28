@@ -35,11 +35,18 @@ export default function OrderBook() {
     { price: 45104.20, quantity: 1.6789 },
   ]);
 
+  const formatNumber = (num: number, decimals: number = 2) => {
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Order Book</h2>
-      <div className="current-price text-xl font-bold text-gray-700">
-        {currentPrice.toFixed(2)}
+      <div className="current-price text-xl">
+        {formatNumber(currentPrice)}
       </div>
       <div className="order-book-container">
         {/* Sell Orders */}
@@ -47,8 +54,8 @@ export default function OrderBook() {
           <div className="sell space-y-1">
             {sellOrders.map((order, index) => (
               <div key={index} className="order-book-row">
-                <span>{order.price.toFixed(2)}</span>
-                <span>{order.quantity.toFixed(4)}</span>
+                <span>{formatNumber(order.price)}</span>
+                <span>{formatNumber(order.quantity, 4)}</span>
               </div>
             ))}
           </div>
@@ -59,8 +66,8 @@ export default function OrderBook() {
           <div className="buy space-y-1">
             {buyOrders.map((order, index) => (
               <div key={index} className="order-book-row">
-                <span>{order.price.toFixed(2)}</span>
-                <span>{order.quantity.toFixed(4)}</span>
+                <span>{formatNumber(order.price)}</span>
+                <span>{formatNumber(order.quantity, 4)}</span>
               </div>
             ))}
           </div>

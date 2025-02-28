@@ -71,19 +71,15 @@ export default function AskMeAnything() {
           </div>
         )}
       </div>
-      <form onSubmit={handleSubmit} className="flex space-x-2">
+      <form onSubmit={handleSubmit} className="chat-input">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask me anything..."
-          className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-        >
+        <button type="submit">
           Send
         </button>
       </form>

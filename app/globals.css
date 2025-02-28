@@ -7,11 +7,18 @@
   --secondary-blue: #1E88E5;
   --light-blue: #E3F2FD;
   --dark-blue: #1565C0;
+  --success-green: #4CAF50;
+  --danger-red: #F44336;
+  --gray-50: #f8f9fa;
+  --gray-100: #f0f0f0;
+  --gray-200: #e9ecef;
+  --gray-700: #495057;
 }
 
 body {
-  background-color: #f8f9fa;
+  background-color: var(--gray-50);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: var(--gray-700);
 }
 
 .container {
@@ -22,7 +29,7 @@ body {
 
 .banner {
   background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -30,13 +37,15 @@ body {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .chart-container {
   height: 500px;
   background: white;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .interval-button {
@@ -47,6 +56,7 @@ body {
   color: var(--primary-blue);
   cursor: pointer;
   transition: all 0.2s;
+  font-weight: 500;
 }
 
 .interval-button:hover {
@@ -66,7 +76,7 @@ body {
 }
 
 .order-book-column {
-  background: #f8f9fa;
+  background: var(--gray-50);
   padding: 1rem;
   border-radius: 4px;
 }
@@ -77,33 +87,89 @@ body {
   gap: 1rem;
   padding: 0.25rem 0;
   font-size: 0.875rem;
+  font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 .current-price {
   text-align: center;
-  padding: 0.5rem;
-  background: #f0f0f0;
+  padding: 0.75rem;
+  background: var(--gray-100);
   border-radius: 4px;
-  margin: 0.5rem 0;
-  font-weight: bold;
+  margin: 0.75rem 0;
+  font-weight: 600;
+  font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 .buy {
-  color: #4CAF50;
+  color: var(--success-green);
 }
 
 .sell {
-  color: #F44336;
+  color: var(--danger-red);
 }
 
 .volume-bar {
   height: 24px;
   background: var(--light-blue);
   border-radius: 4px;
-  margin: 0.25rem 0;
+  transition: width 0.3s ease;
 }
 
 .chat-container {
   height: 400px;
   overflow-y: auto;
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-200) transparent;
+}
+
+.chat-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+  background-color: var(--gray-200);
+  border-radius: 3px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.chat-input input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 2px var(--light-blue);
+}
+
+.chat-input button {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.chat-input button:hover {
+  background: var(--dark-blue);
 } 

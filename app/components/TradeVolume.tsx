@@ -21,17 +21,19 @@ export default function TradeVolume() {
       <div className="space-y-4">
         {categories.map((category, index) => (
           <div key={index}>
-            <div className="flex justify-between text-sm mb-1">
-              <span>{category.name} ({category.range})</span>
-              <span>{category.percentage}%</span>
+            <div className="flex justify-between items-center text-sm mb-1">
+              <div className="flex items-center">
+                <span className="font-medium">{category.name}</span>
+                <span className="text-gray-500 ml-2">({category.range})</span>
+              </div>
+              <span className="font-medium">{category.percentage}%</span>
             </div>
-            <div 
-              className="volume-bar"
-              style={{ 
-                width: `${category.percentage}%`,
-                backgroundColor: 'var(--light-blue)'
-              }}
-            />
+            <div className="relative h-6">
+              <div 
+                className="volume-bar absolute left-0 top-0"
+                style={{ width: `${category.percentage}%` }}
+              />
+            </div>
           </div>
         ))}
       </div>

@@ -11,47 +11,49 @@ import AskMeAnything from './components/AskMeAnything';
 
 export default function Home() {
   return (
-    <main>
+    <main className="min-h-screen">
       {/* Banner */}
       <div className="banner text-white">
-        <div className="container flex items-center">
-          <img src="/flow-logo.png" alt="Flow" className="h-12 mr-4" />
-          <h1 className="text-2xl font-bold">Flow</h1>
+        <div className="container flex items-center h-12">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold text-white mr-2">Flow</h1>
+            <img src="/flow-logo.png" alt="Flow" className="h-6 w-6" />
+          </div>
         </div>
       </div>
 
       <div className="container py-4">
         {/* Kline Chart */}
-        <div className="box">
+        <div className="box mb-4">
           <KlineChart />
         </div>
 
         {/* Order Book & Trade Volume Classification Container */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="box">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="box mb-0">
             <OrderBook />
           </div>
-          <div className="box">
+          <div className="box mb-0">
             <TradeVolume />
           </div>
         </div>
 
         {/* Funding Rate & Volume Pulse */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="box">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="box mb-0">
             <FundingRate />
           </div>
-          <div className="box">
+          <div className="box mb-0">
             <VolumePulse />
           </div>
         </div>
 
         {/* Liquidation Points & 24h Change */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="box">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="box mb-0">
             <LiquidationPoints />
           </div>
-          <div className="box">
+          <div className="box mb-0">
             <PriceChange />
           </div>
         </div>
