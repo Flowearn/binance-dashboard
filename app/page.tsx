@@ -13,11 +13,11 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Banner */}
-      <div className="banner text-white">
+      <div className="banner">
         <div className="container flex items-center h-12">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-white mr-2">Flow</h1>
-            <img src="/flow-logo.png" alt="Flow" className="h-6 w-6" />
+            <h1 className="text-white text-2xl font-bold mr-2">Flow</h1>
+            <img src="/flow-logo.png" alt="Flow" className="h-[28px] w-[28px]" />
           </div>
         </div>
       </div>
@@ -28,7 +28,7 @@ export default function Home() {
           <KlineChart />
         </div>
 
-        {/* Order Book & Trade Volume Classification Container */}
+        {/* Order Book & Trade Volume Classification */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="box mb-0">
             <OrderBook />
@@ -38,23 +38,23 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Funding Rate & Volume Pulse */}
+        {/* Funding Rate & 24h Change */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="box mb-0">
             <FundingRate />
           </div>
           <div className="box mb-0">
-            <VolumePulse />
+            <PriceChange />
           </div>
         </div>
 
-        {/* Liquidation Points & 24h Change */}
+        {/* Volume Pulse & Liquidation Points */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="box mb-0">
-            <LiquidationPoints />
+            <VolumePulse />
           </div>
           <div className="box mb-0">
-            <PriceChange />
+            <LiquidationPoints />
           </div>
         </div>
 
