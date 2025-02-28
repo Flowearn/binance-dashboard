@@ -1,82 +1,110 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useBinanceData } from '../hooks/useBinanceData';
+import { useBinanceWebSocket } from '../hooks/useBinanceWebSocket';
 
 interface OrderBookData {
   lastUpdateId: number;
-  bids: string[][];  // [price, quantity]
-  asks: string[][];  // [price, quantity]
+  bids: [string, string][];
+  asks: [string, string][];
+}
+
+interface WebSocketDepthData {
+  e: string; // Event type
+  E: number; // Event time
+  s: string; // Symbol
+  U: number; // First update ID
+  u: number; // Final update ID
+  b: [string, string][]; // Bids
+  a: [string, string][]; // Asks
 }
 
 export default function OrderBook() {
-  const { data, error, isLoading } = useBinanceData<OrderBookData>({
+  const [orderBook, setOrderBook] = useState<OrderBookData | null>(null);
+  
+  // 初始数据获取
+  const { data: initialData, error: fetchError, isLoading } = useBinanceData<OrderBookData>({
     endpoint: 'orderbook',
     symbol: 'BTCUSDT',
-    limit: 10,
-    refreshInterval: 1000, // 1秒更新一次
+    limit: 20,
+    refreshInterval: 10000,
   });
 
-  const formatNumber = (num: string, decimals: number = 2) => {
-    return Number(num).toLocaleString('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
+  // WebSocket 实时更新
+  const { data: wsData, error: wsError, isConnected } = useBinanceWebSocket<WebSocketDepthData>({
+    symbol: 'BTCUSDT',
+    stream: 'depth',
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setOrderBook(initialData);
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    if (wsData && orderBook) {
+      // 更新订单簿数据
+      setOrderBook(prev => {
+        if (!prev) return prev;
+        return {
+          lastUpdateId: wsData.u,
+          bids: wsData.b.slice(0, 20),
+          asks: wsData.a.slice(0, 20),
+        };
+      });
+    }
+  }, [wsData]);
+
+  const formatNumber = (value: string, decimals: number = 2) => {
+    return Number(value).toFixed(decimals);
   };
 
-  if (error) {
+  if (isLoading) {
+    return <div className="p-4">Loading order book...</div>;
+  }
+
+  if (fetchError || wsError) {
     return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Order Book</h2>
-        <div className="text-red-500">Error loading order book data</div>
+      <div className="p-4 text-red-500">
+        Error: {(fetchError || wsError)?.message}
       </div>
     );
   }
 
-  if (isLoading || !data) {
-    return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Order Book</h2>
-        <div className="animate-pulse">Loading order book...</div>
-      </div>
-    );
+  if (!orderBook) {
+    return <div className="p-4">No order book data available</div>;
   }
-
-  // 获取当前价格（最高买价和最低卖价的中间值）
-  const highestBid = Number(data.bids[0]?.[0] || 0);
-  const lowestAsk = Number(data.asks[0]?.[0] || 0);
-  const currentPrice = (highestBid + lowestAsk) / 2;
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Order Book</h2>
-      <div className="current-price text-xl">
-        {formatNumber(currentPrice.toString())}
-      </div>
-      <div className="order-book-container">
-        {/* Sell Orders */}
-        <div className="order-book-column">
-          <div className="sell space-y-1">
-            {data.asks.slice(0, 10).map(([price, quantity], index) => (
-              <div key={index} className="order-book-row">
-                <span>{formatNumber(price)}</span>
-                <span>{formatNumber(quantity, 4)}</span>
-              </div>
-            ))}
-          </div>
+    <div className="p-4">
+      <h2 className="text-lg font-semibold mb-4">Order Book</h2>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-green-500 mb-2">Bids</h3>
+          {orderBook.bids.map(([price, quantity], index) => (
+            <div key={`bid-${index}`} className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-green-500">{formatNumber(price, 2)}</span>
+              <span>{formatNumber(quantity, 4)}</span>
+            </div>
+          ))}
         </div>
-
-        {/* Buy Orders */}
-        <div className="order-book-column">
-          <div className="buy space-y-1">
-            {data.bids.slice(0, 10).map(([price, quantity], index) => (
-              <div key={index} className="order-book-row">
-                <span>{formatNumber(price)}</span>
-                <span>{formatNumber(quantity, 4)}</span>
-              </div>
-            ))}
-          </div>
+        <div>
+          <h3 className="text-red-500 mb-2">Asks</h3>
+          {orderBook.asks.map(([price, quantity], index) => (
+            <div key={`ask-${index}`} className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-red-500">{formatNumber(price, 2)}</span>
+              <span>{formatNumber(quantity, 4)}</span>
+            </div>
+          ))}
         </div>
       </div>
+      {!isConnected && (
+        <div className="mt-4 text-yellow-500">
+          WebSocket disconnected. Attempting to reconnect...
+        </div>
+      )}
     </div>
   );
 } 
