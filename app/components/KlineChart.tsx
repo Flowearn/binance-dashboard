@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from 'lightweight-charts';
-import { useBinanceData } from '../hooks/useBinanceData';
+import { useBinanceData, UseBinanceDataOptions } from '../hooks/useBinanceData';
 
 interface KlineData {
   time: number;  // 开盘时间
