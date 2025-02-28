@@ -6,7 +6,7 @@ interface VolumeCategory {
   percentage: number;
 }
 
-const TradeVolume = () => {
+export default function TradeVolume() {
   const categories: VolumeCategory[] = [
     { name: 'Super Large', range: '>$1M', percentage: 25 },
     { name: 'Large', range: '$100K-$1M', percentage: 35 },
@@ -16,7 +16,7 @@ const TradeVolume = () => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div>
       <h2 className="text-xl font-bold mb-4">Trade Volume Classification</h2>
       <div className="space-y-4">
         {categories.map((category, index) => (
@@ -26,7 +26,7 @@ const TradeVolume = () => {
               <span>{category.percentage}%</span>
             </div>
             <div 
-              className="h-6 bg-[#E3F2FD] rounded" 
+              className="volume-bar" 
               style={{ width: `${category.percentage}%` }}
             />
           </div>
@@ -34,6 +34,4 @@ const TradeVolume = () => {
       </div>
     </div>
   );
-};
-
-export default TradeVolume; 
+} 

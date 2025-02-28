@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { createChart } from 'lightweight-charts';
+import { useEffect, useRef, useState } from 'react';
+import { createChart, ColorType } from 'lightweight-charts';
 
-const KlineChart = () => {
+const intervals = ['1D', '4H', '1H', '15M', '1M'];
+
+export default function KlineChart() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [activeInterval, setActiveInterval] = useState('1D');
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -51,9 +54,25 @@ const KlineChart = () => {
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, []);
+  }, [activeInterval]); // Add activeInterval as dependency
 
-  return <div ref={chartContainerRef} />;
-};
-
-export default KlineChart; 
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Price Chart</h2>
+        <div className="space-x-2">
+          {intervals.map((interval) => (
+            <button
+              key={interval}
+              className={`interval-button ${activeInterval === interval ? 'active' : ''}`}
+              onClick={() => setActiveInterval(interval)}
+            >
+              {interval}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div ref={chartContainerRef} className="chart-container rounded-lg border border-gray-100" />
+    </div>
+  );
+} 

@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 
-const PriceChange = () => {
+export default function PriceChange() {
   const [priceChange] = useState(2150.25);
   const [percentageChange] = useState(4.76);
   const isPositive = priceChange >= 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div>
       <h2 className="text-xl font-bold mb-4">24h Change</h2>
       <div className="flex items-center space-x-4">
         <div className={`text-3xl font-bold ${isPositive ? 'text-[#4CAF50]' : 'text-[#F44336]'}`}>
@@ -20,6 +20,4 @@ const PriceChange = () => {
       </div>
     </div>
   );
-};
-
-export default PriceChange; 
+} 
