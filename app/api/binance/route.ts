@@ -76,6 +76,11 @@ const formatData = (data: any, endpoint: string) => {
 const getApiUrl = (endpoint: string, params: URLSearchParams) => {
   const baseUrl = endpoint === 'fundingRate' ? BINANCE_API.futures : BINANCE_API.spot;
   
+  // 确保K线图请求有默认interval
+  if (endpoint === 'kline' && !params.get('interval')) {
+    params.set('interval', '1d');
+  }
+  
   switch (endpoint) {
     case 'kline':
       return `${baseUrl}/klines?${params.toString()}`;

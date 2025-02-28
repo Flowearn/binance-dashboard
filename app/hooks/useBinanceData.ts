@@ -6,6 +6,7 @@ interface UseBinanceDataOptions {
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
+  interval?: string;
 }
 
 const fetcher = async (url: string) => {
