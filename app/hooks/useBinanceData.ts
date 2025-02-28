@@ -1,13 +1,13 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
-export interface UseBinanceDataOptions {
+export type UseBinanceDataOptions = {
   endpoint: string;
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
   interval?: string;
-}
+};
 
 const fetcher = async (url: string) => {
   try {

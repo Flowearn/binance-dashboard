@@ -41,7 +41,7 @@ export default function KlineChart() {
     interval: selectedInterval,
     limit: 200,
     refreshInterval: 5000, // 5秒更新一次
-  });
+  } as UseBinanceDataOptions);
 
   // 初始化图表
   useEffect(() => {
