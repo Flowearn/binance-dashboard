@@ -36,36 +36,36 @@ export default function Home() {
         </div>
 
         {/* 第二行: 订单簿和交易量分类 */}
-        <div className="flex flex-row gap-4 mb-4">
-          <div className="w-[65%] data-box p-5">
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ width: '65%' }} className="data-box p-5">
             <h2 className="data-box-title">Order Book</h2>
             <OrderBook symbol="BTCUSDT" />
           </div>
-          <div className="w-[35%] data-box p-5">
+          <div style={{ width: '35%' }} className="data-box p-5">
             <h2 className="data-box-title">Trade Volume Classification</h2>
             <TradeVolume />
           </div>
         </div>
 
         {/* 第三行: 资金费率和24小时价格变化 */}
-        <div className="flex flex-row gap-4 mb-4">
-          <div className="w-1/2 data-box p-5">
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ width: '50%' }} className="data-box p-5">
             <h2 className="data-box-title">Funding Rate</h2>
             <FundingRate />
           </div>
-          <div className="w-1/2 data-box p-5">
+          <div style={{ width: '50%' }} className="data-box p-5">
             <h2 className="data-box-title">24h Price Change</h2>
             <PriceChange />
           </div>
         </div>
 
         {/* 第四行: 成交量脉冲和清算点分布 */}
-        <div className="flex flex-row gap-4 mb-4">
-          <div className="w-1/2 data-box p-5">
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ width: '50%' }} className="data-box p-5">
             <h2 className="data-box-title">Volume Pulse</h2>
             <VolumePulse />
           </div>
-          <div className="w-1/2 data-box p-5">
+          <div style={{ width: '50%' }} className="data-box p-5">
             <h2 className="data-box-title">Liquidation Points</h2>
             <LiquidationPoints />
           </div>
