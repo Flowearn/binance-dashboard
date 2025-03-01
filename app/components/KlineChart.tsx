@@ -35,13 +35,15 @@ export default function KlineChart() {
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const [selectedInterval, setSelectedInterval] = useState('1d');
 
-  const { data: klineData, error, isLoading } = useBinanceData<KlineData[]>({
+  const options: KlineDataOptions = {
     endpoint: 'kline',
     symbol: 'BTCUSDT',
     interval: selectedInterval,
     limit: 200,
     refreshInterval: 5000, // 5秒更新一次
-  } as KlineDataOptions);
+  };
+
+  const { data: klineData, error, isLoading } = useBinanceData<KlineData[]>(options);
 
   // 初始化图表
   useEffect(() => {

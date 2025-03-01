@@ -1,7 +1,10 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
+type Endpoint = 'kline' | 'depth' | 'ticker/24hr' | 'trades' | 'fundingRate';
+
 export type BaseUseBinanceDataOptions = {
+  endpoint: Endpoint;
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
