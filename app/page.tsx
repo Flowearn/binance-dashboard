@@ -35,12 +35,12 @@ export default function Home() {
         </div>
 
         {/* 第二行: 订单簿和交易量分类 */}
-        <div className="flex gap-4 mb-4">
-          <div className="w-[65%] data-box p-5">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="w-full md:w-[65%] data-box p-5">
             <h2 className="data-box-title">Order Book</h2>
             <OrderBook symbol="BTCUSDT" />
           </div>
-          <div className="w-[35%] data-box p-5">
+          <div className="w-full md:w-[35%] data-box p-5">
             <h2 className="data-box-title">Trade Volume Classification</h2>
             <TradeVolume />
           </div>
