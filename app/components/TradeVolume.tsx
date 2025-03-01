@@ -1,6 +1,7 @@
 'use client';
 
 import { useBinanceData } from '../hooks/useBinanceData';
+import type { TradeDataOptions } from '../hooks/useBinanceData';
 import { useEffect, useState } from 'react';
 
 interface Trade {
@@ -34,7 +35,7 @@ export default function TradeVolume() {
     symbol: 'BTCUSDT',
     limit: 100,
     refreshInterval: 5000, // 5秒更新一次
-  });
+  } as TradeDataOptions);
 
   const [categories, setCategories] = useState<VolumeCategory[]>([
     { name: 'Super Large', range: '>$1M', percentage: 0, totalVolume: 0 },

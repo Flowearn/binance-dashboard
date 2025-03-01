@@ -1,6 +1,7 @@
 'use client';
 
 import { useBinanceData } from '../hooks/useBinanceData';
+import type { FundingRateDataOptions } from '../hooks/useBinanceData';
 
 interface FundingRateData {
   symbol: string;
@@ -14,7 +15,7 @@ export default function FundingRate() {
     endpoint: 'fundingRate',
     symbol: 'BTCUSDT',
     refreshInterval: 60000, // 1分钟更新一次
-  });
+  } as FundingRateDataOptions);
 
   const formatRate = (rate: string) => {
     // 转换为百分比并保留4位小数

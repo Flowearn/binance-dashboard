@@ -1,6 +1,7 @@
 'use client';
 
 import { useBinanceData } from '../hooks/useBinanceData';
+import type { OrderBookDataOptions } from '../hooks/useBinanceData';
 
 interface OrderBookData {
   lastUpdateId: number;
@@ -10,11 +11,11 @@ interface OrderBookData {
 
 export default function OrderBook() {
   const { data, error, isLoading } = useBinanceData<OrderBookData>({
-    endpoint: 'orderbook',
+    endpoint: 'depth',
     symbol: 'BTCUSDT',
     limit: 20,
     refreshInterval: 1000,
-  });
+  } as OrderBookDataOptions);
 
   const formatNumber = (value: string | undefined, decimals: number = 2) => {
     if (!value) return '0.00';

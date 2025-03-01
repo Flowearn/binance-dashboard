@@ -1,6 +1,7 @@
 'use client';
 
 import { useBinanceData } from '../hooks/useBinanceData';
+import type { TickerDataOptions } from '../hooks/useBinanceData';
 
 interface Ticker24hData {
   symbol: string;
@@ -13,10 +14,10 @@ interface Ticker24hData {
 
 export default function PriceChange() {
   const { data, error, isLoading } = useBinanceData<Ticker24hData>({
-    endpoint: 'ticker24h',
+    endpoint: 'ticker/24hr',
     symbol: 'BTCUSDT',
-    refreshInterval: 2000, // 2秒更新一次
-  });
+    refreshInterval: 1000,
+  } as TickerDataOptions);
 
   const formatNumber = (num: string | number, decimals: number = 2) => {
     return Number(num).toLocaleString('en-US', {

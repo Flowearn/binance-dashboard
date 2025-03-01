@@ -2,7 +2,6 @@ import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
 export type BaseUseBinanceDataOptions = {
-  endpoint: string;
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
@@ -13,7 +12,28 @@ export type KlineDataOptions = BaseUseBinanceDataOptions & {
   interval: string;
 };
 
-export type UseBinanceDataOptions = BaseUseBinanceDataOptions | KlineDataOptions;
+export type OrderBookDataOptions = BaseUseBinanceDataOptions & {
+  endpoint: 'depth';
+};
+
+export type TickerDataOptions = BaseUseBinanceDataOptions & {
+  endpoint: 'ticker/24hr';
+};
+
+export type TradeDataOptions = BaseUseBinanceDataOptions & {
+  endpoint: 'trades';
+};
+
+export type FundingRateDataOptions = BaseUseBinanceDataOptions & {
+  endpoint: 'fundingRate';
+};
+
+export type UseBinanceDataOptions =
+  | KlineDataOptions
+  | OrderBookDataOptions
+  | TickerDataOptions
+  | TradeDataOptions
+  | FundingRateDataOptions;
 
 const fetcher = async (url: string) => {
   try {
