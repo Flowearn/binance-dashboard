@@ -1,13 +1,19 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
-export type UseBinanceDataOptions = {
+export type BaseUseBinanceDataOptions = {
   endpoint: string;
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
-  interval?: string;
 };
+
+export type KlineDataOptions = BaseUseBinanceDataOptions & {
+  endpoint: 'kline';
+  interval: string;
+};
+
+export type UseBinanceDataOptions = BaseUseBinanceDataOptions | KlineDataOptions;
 
 const fetcher = async (url: string) => {
   try {
@@ -46,7 +52,8 @@ const fetcher = async (url: string) => {
 };
 
 export function useBinanceData<T>(options: UseBinanceDataOptions) {
-  const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000, interval } = options; // 添加 interval
+  const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000 } = options;
+  const interval = 'interval' in options ? options.interval : undefined;
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
 
@@ -54,7 +61,7 @@ export function useBinanceData<T>(options: UseBinanceDataOptions) {
     endpoint,
     symbol,
     limit: limit.toString(),
-    ...(interval && { interval }), // 有 interval 时才添加到查询参数
+    ...(interval && { interval }),
   }).toString();
 
   const { data, error, mutate } = useSWR(

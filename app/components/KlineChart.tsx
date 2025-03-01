@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from 'lightweight-charts';
 import { useBinanceData } from '../hooks/useBinanceData';
-import type { UseBinanceDataOptions } from '../hooks/useBinanceData';
+import type { KlineDataOptions } from '../hooks/useBinanceData';
 
 interface KlineData {
   time: number;  // 开盘时间
@@ -41,7 +41,7 @@ export default function KlineChart() {
     interval: selectedInterval,
     limit: 200,
     refreshInterval: 5000, // 5秒更新一次
-  } as UseBinanceDataOptions);
+  } as KlineDataOptions);
 
   // 初始化图表
   useEffect(() => {
