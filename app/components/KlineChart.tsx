@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from 'lightweight-charts';
 import { useBinanceData } from '../hooks/useBinanceData';
-import type { KlineDataOptions } from '../hooks/useBinanceData';
+import type { KlineDataOptions, KlineInterval } from '../hooks/useBinanceData';
 
 interface KlineData {
   time: number;  // 开盘时间
@@ -20,7 +20,7 @@ interface KlineData {
   ignore: string;
 }
 
-const intervals = [
+const intervals: { label: string; value: KlineInterval }[] = [
   { label: '1D', value: '1d' },
   { label: '4H', value: '4h' },
   { label: '1H', value: '1h' },
@@ -33,15 +33,15 @@ export default function KlineChart() {
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-  const [selectedInterval, setSelectedInterval] = useState('1d');
+  const [selectedInterval, setSelectedInterval] = useState<KlineInterval>('1d');
 
   const { data: klineData, error, isLoading } = useBinanceData<KlineData[]>({
-    endpoint: 'kline' as const,
+    endpoint: 'kline',
     symbol: 'BTCUSDT',
     interval: selectedInterval,
     limit: 200,
     refreshInterval: 5000, // 5秒更新一次
-  });
+  } as const);
 
   // 初始化图表
   useEffect(() => {

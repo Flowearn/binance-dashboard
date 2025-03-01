@@ -8,10 +8,13 @@ interface BaseOptions {
   refreshInterval?: number;
 }
 
+// 时间间隔类型
+export type KlineInterval = '1d' | '4h' | '1h' | '15m' | '1m';
+
 // K线数据选项
 export interface KlineDataOptions extends BaseOptions {
   endpoint: 'kline';
-  interval: string;
+  interval: KlineInterval;
 }
 
 // 订单簿数据选项
@@ -128,7 +131,7 @@ export function useBinanceData<T extends DataTypeMap[keyof DataTypeMap]>(
   options: UseBinanceDataOptions
 ) {
   const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000 } = options;
-  const interval = 'interval' in options ? options.interval : undefined;
+  const interval = endpoint === 'kline' ? (options as KlineDataOptions).interval : undefined;
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
 
