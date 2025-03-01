@@ -1,7 +1,7 @@
 'use client';
 
 import KlineChart from './components/KlineChart';
-import OrderBook from './components/OrderBook';
+import { OrderBook } from './components/OrderBook';
 import TradeVolume from './components/TradeVolume';
 import FundingRate from './components/FundingRate';
 import VolumePulse from './components/VolumePulse';
@@ -29,23 +29,23 @@ export default function Home() {
       </div>
 
       <div className="container py-4">
-        {/* Kline Chart */}
+        {/* 第一行: K线图 */}
         <div className="box mb-4">
           <KlineChart />
         </div>
 
-        {/* Order Book & Trade Volume Classification */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="box mb-0">
-            <OrderBook />
+        {/* 第二行: 订单簿和交易量分类 */}
+        <div className="flex gap-4 mb-4">
+          <div className="w-[65%]">
+            <OrderBook symbol="BTCUSDT" />
           </div>
-          <div className="box mb-0">
+          <div className="w-[35%]">
             <TradeVolume />
           </div>
         </div>
 
-        {/* Funding Rate & 24h Change */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* 第三行: 资金费率和24小时价格变化 */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="box mb-0">
             <FundingRate />
           </div>
@@ -54,8 +54,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Volume Pulse & Liquidation Points */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {/* 第四行: 成交量脉冲和清算点分布 */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="box mb-0">
             <VolumePulse />
           </div>
@@ -64,7 +64,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Ask Me Anything */}
+        {/* 第五行: 聊天框 */}
         <div className="box">
           <AskMeAnything />
         </div>
