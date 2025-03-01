@@ -42,6 +42,52 @@ export type UseBinanceDataOptions =
   | TradeDataOptions
   | FundingRateDataOptions;
 
+// 响应数据类型映射
+type DataTypeMap = {
+  kline: Array<{
+    time: number;
+    open: string;
+    high: string;
+    low: string;
+    close: string;
+    volume: string;
+    closeTime: number;
+    quoteAssetVolume: string;
+    trades: number;
+    takerBuyBaseAssetVolume: string;
+    takerBuyQuoteAssetVolume: string;
+    ignore: string;
+  }>;
+  depth: {
+    lastUpdateId: number;
+    bids: [string, string][];
+    asks: [string, string][];
+  };
+  'ticker/24hr': {
+    symbol: string;
+    priceChange: string;
+    priceChangePercent: string;
+    lastPrice: string;
+    volume: string;
+    quoteVolume: string;
+  };
+  trades: Array<{
+    id: number;
+    price: string;
+    qty: string;
+    quoteQty: string;
+    time: number;
+    isBuyerMaker: boolean;
+    isBestMatch: boolean;
+  }>;
+  fundingRate: Array<{
+    symbol: string;
+    fundingRate: string;
+    fundingTime: number;
+    markPrice: string;
+  }>;
+};
+
 const fetcher = async (url: string) => {
   try {
     // 直接从Binance API获取实时数据
@@ -78,7 +124,9 @@ const fetcher = async (url: string) => {
   }
 };
 
-export function useBinanceData<T>(options: UseBinanceDataOptions) {
+export function useBinanceData<T extends DataTypeMap[keyof DataTypeMap]>(
+  options: UseBinanceDataOptions
+) {
   const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000 } = options;
   const interval = 'interval' in options ? options.interval : undefined;
   const [retryCount, setRetryCount] = useState(0);
@@ -97,14 +145,14 @@ export function useBinanceData<T>(options: UseBinanceDataOptions) {
     {
       refreshInterval: refreshInterval,
       revalidateOnFocus: false,
-      dedupingInterval: 100, // 降低重复请求的时间间隔
+      dedupingInterval: 100,
       onError: (err: Error) => {
         console.error('SWR Error:', err);
         if (retryCount < MAX_RETRIES) {
           setTimeout(() => {
             setRetryCount(prev => prev + 1);
             mutate();
-          }, Math.pow(2, retryCount) * 500); // 减少重试等待时间
+          }, Math.pow(2, retryCount) * 500);
         }
       }
     }
