@@ -131,7 +131,13 @@ export function useBinanceData<T extends DataTypeMap[keyof DataTypeMap]>(
   options: UseBinanceDataOptions
 ) {
   const { endpoint, symbol = 'BTCUSDT', limit = 20, refreshInterval = 1000 } = options;
-  const interval = endpoint === 'kline' ? (options as KlineDataOptions).interval : undefined;
+  
+  // 使用类型守卫来处理不同的选项类型
+  function isKlineOptions(opts: UseBinanceDataOptions): opts is KlineDataOptions {
+    return opts.endpoint === 'kline';
+  }
+
+  const interval = isKlineOptions(options) ? options.interval : undefined;
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
 
