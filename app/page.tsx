@@ -30,7 +30,8 @@ export default function Home() {
 
       <div className="container py-4">
         {/* 第一行: K线图 */}
-        <div className="box mb-4">
+        <div className="data-box p-5 mb-4">
+          <h2 className="data-box-title">K-line Chart</h2>
           <KlineChart />
         </div>
 
@@ -47,27 +48,32 @@ export default function Home() {
         </div>
 
         {/* 第三行: 资金费率和24小时价格变化 */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="box mb-0">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="w-full md:w-1/2 data-box p-5">
+            <h2 className="data-box-title">Funding Rate</h2>
             <FundingRate />
           </div>
-          <div className="box mb-0">
+          <div className="w-full md:w-1/2 data-box p-5">
+            <h2 className="data-box-title">24h Price Change</h2>
             <PriceChange />
           </div>
         </div>
 
         {/* 第四行: 成交量脉冲和清算点分布 */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="box mb-0">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <div className="w-full md:w-1/2 data-box p-5">
+            <h2 className="data-box-title">Volume Pulse</h2>
             <VolumePulse />
           </div>
-          <div className="box mb-0">
+          <div className="w-full md:w-1/2 data-box p-5">
+            <h2 className="data-box-title">Liquidation Points</h2>
             <LiquidationPoints />
           </div>
         </div>
 
         {/* 第五行: 聊天框 */}
-        <div className="box">
+        <div className="data-box p-5">
+          <h2 className="data-box-title">Chat</h2>
           <AskMeAnything />
         </div>
       </div>
