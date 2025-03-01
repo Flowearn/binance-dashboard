@@ -114,8 +114,7 @@ export default function TradeVolume() {
 
   if (error) {
     return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Trade Volume Classification</h2>
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="text-red-500">Error loading trade data</div>
       </div>
     );
@@ -123,8 +122,7 @@ export default function TradeVolume() {
 
   if (isLoading) {
     return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Trade Volume Classification</h2>
+      <div className="min-h-[300px] flex items-center justify-center">
         <div className="animate-pulse">Loading trade volume data...</div>
       </div>
     );
@@ -140,32 +138,29 @@ export default function TradeVolume() {
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4">Trade Volume Classification</h2>
-      <div className="space-y-4">
-        {categories.map((category, index) => (
-          <div key={index}>
-            <div className="flex justify-between items-center text-sm mb-1">
-              <div className="flex items-center">
-                <span className="font-medium">{category.name}</span>
-                <span className="text-gray-500 ml-2">({category.range})</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">{category.percentage.toFixed(1)}%</span>
-                <span className="text-gray-500 text-xs">
-                  {formatVolume(category.totalVolume)}
-                </span>
-              </div>
+    <div className="space-y-4">
+      {categories.map((category, index) => (
+        <div key={index}>
+          <div className="flex justify-between items-center text-sm mb-1">
+            <div className="flex items-center">
+              <span className="font-medium">{category.name}</span>
+              <span className="text-gray-500 ml-2">({category.range})</span>
             </div>
-            <div className="relative h-6">
-              <div
-                className="volume-bar absolute left-0 top-0"
-                style={{ width: `${category.percentage}%` }}
-              />
+            <div className="flex items-center space-x-2">
+              <span className="font-medium">{category.percentage.toFixed(1)}%</span>
+              <span className="text-gray-500 text-xs">
+                {formatVolume(category.totalVolume)}
+              </span>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="relative h-6">
+            <div
+              className="volume-bar absolute left-0 top-0 h-full bg-blue-500 opacity-70 rounded"
+              style={{ width: `${category.percentage}%` }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 } 

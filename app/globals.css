@@ -41,6 +41,35 @@ body {
   margin-bottom: 1rem;
 }
 
+/* 添加美化的边框样式 */
+.data-box {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.data-box:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.data-box-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-blue);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.volume-bar {
+  background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+  border-radius: 4px;
+  height: 100%;
+}
+
 .chart-container {
   height: 500px;
   background: white;
@@ -106,13 +135,6 @@ body {
 
 .sell {
   color: var(--danger-red);
-}
-
-.volume-bar {
-  height: 24px;
-  background: var(--light-blue);
-  border-radius: 4px;
-  transition: width 0.3s ease;
 }
 
 .chat-container {
