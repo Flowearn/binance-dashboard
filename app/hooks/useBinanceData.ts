@@ -1,36 +1,40 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
-type Endpoint = 'kline' | 'depth' | 'ticker/24hr' | 'trades' | 'fundingRate';
-
-export type BaseUseBinanceDataOptions = {
-  endpoint: Endpoint;
+// 基础配置类型
+interface BaseOptions {
   symbol?: string;
   limit?: number;
   refreshInterval?: number;
-};
+}
 
-export type KlineDataOptions = BaseUseBinanceDataOptions & {
+// K线数据选项
+export interface KlineDataOptions extends BaseOptions {
   endpoint: 'kline';
   interval: string;
-};
+}
 
-export type OrderBookDataOptions = BaseUseBinanceDataOptions & {
+// 订单簿数据选项
+export interface OrderBookDataOptions extends BaseOptions {
   endpoint: 'depth';
-};
+}
 
-export type TickerDataOptions = BaseUseBinanceDataOptions & {
+// 24小时行情数据选项
+export interface TickerDataOptions extends BaseOptions {
   endpoint: 'ticker/24hr';
-};
+}
 
-export type TradeDataOptions = BaseUseBinanceDataOptions & {
+// 交易数据选项
+export interface TradeDataOptions extends BaseOptions {
   endpoint: 'trades';
-};
+}
 
-export type FundingRateDataOptions = BaseUseBinanceDataOptions & {
+// 资金费率数据选项
+export interface FundingRateDataOptions extends BaseOptions {
   endpoint: 'fundingRate';
-};
+}
 
+// 联合类型
 export type UseBinanceDataOptions =
   | KlineDataOptions
   | OrderBookDataOptions
