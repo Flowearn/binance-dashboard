@@ -164,7 +164,7 @@ export default function KlineChart() {
   }
 
   return (
-    <div>
+    <div style={{ width: '100%', height: '100%' }}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Price Chart</h2>
         <div className="space-x-2">
@@ -179,7 +179,11 @@ export default function KlineChart() {
           ))}
         </div>
       </div>
-      <div ref={chartContainerRef} className="chart-container relative">
+      <div 
+        ref={chartContainerRef} 
+        className="chart-container relative" 
+        style={{ height: 'calc(100% - 50px)', width: '100%', overflow: 'hidden' }}
+      >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
             <div className="animate-pulse">Loading chart data...</div>

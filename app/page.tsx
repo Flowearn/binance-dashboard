@@ -30,9 +30,9 @@ export default function Home() {
 
       <div className="container py-4">
         {/* 第一行: K线图 */}
-        <div style={{ marginBottom: '1rem' }} className="data-box p-5">
+        <div style={{ marginBottom: '2rem' }} className="data-box p-5">
           <h2 className="data-box-title">K-line Chart</h2>
-          <div style={{ height: '400px', width: '100%' }}>
+          <div style={{ height: '500px', width: '100%', marginBottom: '1rem' }}>
             <KlineChart />
           </div>
         </div>
