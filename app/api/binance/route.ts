@@ -125,12 +125,27 @@ const generateMockData = (endpoint: string, symbol: string) => {
     case 'klines':
       const klines = [];
       const klineNow = Date.now();
+      
+      // 设置初始价格
+      let lastClose = currentPrice;
+      const volatility = currentPrice * 0.005; // 0.5% 波动率
+      
       for (let i = 0; i < 100; i++) {
-        const time = klineNow - (99 - i) * 60000;
-        const open = currentPrice - 50 + Math.random() * 100;
-        const close = open - 50 + Math.random() * 100;
-        const high = Math.max(open, close) + Math.random() * 20;
-        const low = Math.min(open, close) - Math.random() * 20;
+        // 时间是从过去到现在，每个间隔1小时
+        const time = klineNow - (99 - i) * 3600000; // 1小时 = 3600000毫秒
+        
+        // 开盘价是上一个蜡烛的收盘价
+        const open = lastClose;
+        
+        // 收盘价在开盘价的基础上有一定波动
+        const priceChange = (Math.random() - 0.5) * 2 * volatility;
+        const close = Math.max(open + priceChange, open * 0.99); // 确保价格不会下跌太多
+        
+        // 最高价和最低价基于开盘价和收盘价
+        const high = Math.max(open, close) + Math.random() * volatility * 0.5;
+        const low = Math.min(open, close) - Math.random() * volatility * 0.5;
+        
+        // 成交量也应该有一定的连续性
         const volume = 10 + Math.random() * 100;
         
         klines.push({
@@ -140,12 +155,15 @@ const generateMockData = (endpoint: string, symbol: string) => {
           low,
           close,
           volume,
-          closeTime: time + 60000,
+          closeTime: time + 3600000, // 收盘时间是开盘时间+1小时
           quoteVolume: volume * close,
           trades: Math.floor(10 + Math.random() * 100),
           buyBaseVolume: volume * 0.6,
           buyQuoteVolume: volume * close * 0.6
         });
+        
+        // 更新lastClose为当前蜡烛的收盘价
+        lastClose = close;
       }
       return klines;
       
