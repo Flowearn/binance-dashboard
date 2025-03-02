@@ -114,171 +114,11 @@ const formatData = (endpoint: string, data: any) => {
   }
 };
 
-// 添加缓存对象，用于存储生成的K线数据
-let klineDataCache: { [key: string]: any[] } = {};
-let lastUpdateTime: { [key: string]: number } = {};
-
-const generateMockData = (endpoint: string, symbol: string) => {
-  console.log(`[${new Date().toISOString()}] Generating mock data for ${endpoint} and symbol ${symbol}`);
-  
-  // 更新BTC价格到当前实际市场价格范围
-  const currentPrice = symbol.includes('BTC') ? 86000 + Math.random() * 1000 : 3000 + Math.random() * 100;
-  
-  switch (endpoint) {
-    case 'kline':
-    case 'klines':
-      // 检查缓存中是否已有数据，以及上次更新时间是否超过10分钟
-      const cacheKey = `${endpoint}_${symbol}`;
-      const now = Date.now();
-      const shouldRefreshCache = !klineDataCache[cacheKey] || 
-                                !lastUpdateTime[cacheKey] || 
-                                (now - lastUpdateTime[cacheKey]) > 600000; // 10分钟更新一次完整数据
-      
-      // 如果缓存有效，只更新最后一个K线
-      if (!shouldRefreshCache) {
-        const cachedData = [...klineDataCache[cacheKey]];
-        const lastItem = cachedData[cachedData.length - 1];
-        
-        // 更新最后一个K线的收盘价和成交量
-        const volatility = lastItem.close * 0.001; // 小波动
-        const priceChange = (Math.random() - 0.5) * 2 * volatility;
-        lastItem.close = Math.max(lastItem.close + priceChange, lastItem.close * 0.999);
-        lastItem.high = Math.max(lastItem.high, lastItem.close);
-        lastItem.low = Math.min(lastItem.low, lastItem.close);
-        lastItem.volume += Math.random() * 5;
-        
-        console.log(`[${new Date().toISOString()}] Updated last K-line data for ${symbol}`);
-        return cachedData;
-      }
-      
-      // 需要生成全新的数据
-      const klines = [];
-      const klineNow = Date.now();
-      
-      // 设置初始价格
-      let lastClose = currentPrice;
-      const volatility = currentPrice * 0.005; // 0.5% 波动率
-      
-      for (let i = 0; i < 100; i++) {
-        // 时间是从过去到现在，每个间隔1小时
-        const time = klineNow - (99 - i) * 3600000; // 1小时 = 3600000毫秒
-        
-        // 开盘价是上一个蜡烛的收盘价
-        const open = lastClose;
-        
-        // 收盘价在开盘价的基础上有一定波动
-        const priceChange = (Math.random() - 0.5) * 2 * volatility;
-        const close = Math.max(open + priceChange, open * 0.99); // 确保价格不会下跌太多
-        
-        // 最高价和最低价基于开盘价和收盘价
-        const high = Math.max(open, close) + Math.random() * volatility * 0.5;
-        const low = Math.min(open, close) - Math.random() * volatility * 0.5;
-        
-        // 成交量也应该有一定的连续性
-        const volume = 10 + Math.random() * 100;
-        
-        klines.push({
-          time,
-          open,
-          high,
-          low,
-          close,
-          volume,
-          closeTime: time + 3600000, // 收盘时间是开盘时间+1小时
-          quoteVolume: volume * close,
-          trades: Math.floor(10 + Math.random() * 100),
-          buyBaseVolume: volume * 0.6,
-          buyQuoteVolume: volume * close * 0.6
-        });
-        
-        // 更新lastClose为当前蜡烛的收盘价
-        lastClose = close;
-      }
-      
-      // 更新缓存
-      klineDataCache[cacheKey] = klines;
-      lastUpdateTime[cacheKey] = now;
-      
-      console.log(`[${new Date().toISOString()}] Generated new K-line data for ${symbol}`);
-      return klines;
-      
-    case 'orderbook':
-    case 'depth':
-      const bids = [];
-      const asks = [];
-      
-      for (let i = 0; i < 10; i++) {
-        const bidPrice = currentPrice - (i + 1) * 10 - Math.random() * 5;
-        const bidQty = 0.1 + Math.random() * 2;
-        bids.push([bidPrice, bidQty]);
-        
-        const askPrice = currentPrice + (i + 1) * 10 + Math.random() * 5;
-        const askQty = 0.1 + Math.random() * 2;
-        asks.push([askPrice, askQty]);
-      }
-      
-      return {
-        lastUpdateId: Date.now(),
-        bids,
-        asks,
-        timestamp: Date.now()
-      };
-      
-    case 'trades':
-      const trades = [];
-      const tradeTime = Date.now();
-      
-      for (let i = 0; i < 50; i++) {
-        const price = currentPrice - 50 + Math.random() * 100;
-        const qty = 0.01 + Math.random() * 1;
-        const isBuyerMaker = Math.random() > 0.5;
-        
-        trades.push({
-          id: tradeTime - i,
-          price,
-          quantity: qty,
-          time: tradeTime - i * 1000,
-          isBuyerMaker,
-          isBestMatch: true,
-          type: isBuyerMaker ? 'sell' : 'buy'
-        });
-      }
-      return trades;
-      
-    case 'ticker24hr':
-    case 'ticker/24hr':
-      return {
-        symbol,
-        priceChange: -100 + Math.random() * 200,
-        priceChangePercent: -1 + Math.random() * 2,
-        lastPrice: currentPrice,
-        highPrice: currentPrice + 100,
-        lowPrice: currentPrice - 100,
-        volume: 1000 + Math.random() * 5000,
-        quoteVolume: (1000 + Math.random() * 5000) * currentPrice,
-      };
-      
-    case 'fundingRate':
-      return [
-        {
-          symbol,
-          fundingRate: (-0.001 + Math.random() * 0.002).toString(),
-          fundingTime: Date.now() + 8 * 3600000,
-          markPrice: currentPrice.toString()
-        }
-      ];
-      
-    default:
-      throw new Error(`Unknown endpoint for mock data: ${endpoint}`);
-  }
-};
-
-// 修改fetchWithFallback函数，检测地理位置限制错误
+// 修改fetchWithFallback函数，简化错误处理
 async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
   let lastError: Error | null = null;
   let lastResponse: Response | null = null;
   let lastResponseText: string | null = null;
-  let isGeoRestricted = false;
 
   for (const url of urls) {
     try {
@@ -306,24 +146,6 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
           statusText: response.statusText,
           body: lastResponseText
         });
-        
-        // 检查是否是地理位置限制错误
-        try {
-          const errorData = JSON.parse(lastResponseText);
-          if (
-            errorData.code === 0 && 
-            errorData.msg && 
-            (errorData.msg.includes('restricted location') || 
-             errorData.msg.includes('Service unavailable from a restricted location'))
-          ) {
-            console.log(`[${new Date().toISOString()}] Detected geo-restriction from Binance API`);
-            isGeoRestricted = true;
-            break; // 如果检测到地理位置限制，立即停止尝试其他URL
-          }
-        } catch (e) {
-          // 解析错误响应失败，继续尝试下一个URL
-        }
-        
         continue;
       }
 
@@ -344,11 +166,6 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
         console.log(`[${new Date().toISOString()}] Request timeout for ${url}`);
       }
     }
-  }
-
-  // 如果检测到地理位置限制，抛出特定错误
-  if (isGeoRestricted) {
-    throw new Error('GEO_RESTRICTED');
   }
 
   // 如果所有 URL 都失败了，返回详细的错误信息
@@ -473,44 +290,15 @@ export async function GET(request: Request) {
       );
     }
 
-    // 设置一个标志，表示是否使用模拟数据
-    let useMockData = false;
-    let data;
+    // 只使用实时数据，不使用模拟数据
+    const apiUrls = getApiUrls(endpoint, searchParams);
+    console.log(`[${new Date().toISOString()}] Trying API URLs for ${endpoint}:`, apiUrls);
 
-    try {
-      const apiUrls = getApiUrls(endpoint, searchParams);
-      console.log(`[${new Date().toISOString()}] Trying API URLs for ${endpoint}:`, apiUrls);
-
-      data = await fetchWithFallback(apiUrls, {
-        cache: 'no-store'
-      });
-      
-      console.log(`[${new Date().toISOString()}] ${endpoint} - Raw data:`, JSON.stringify(data).slice(0, 200) + '...');
-    } catch (error) {
-      // 检查是否是地理位置限制错误或其他API错误
-      console.error(`[${new Date().toISOString()}] Error fetching from Binance API:`, error);
-      useMockData = true;
-    }
-
-    // 如果需要使用模拟数据
-    if (useMockData) {
-      console.log(`[${new Date().toISOString()}] Using mock data for ${endpoint}`);
-      data = generateMockData(endpoint, symbol);
-      
-      return new NextResponse(
-        JSON.stringify(data),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'X-Mock-Data': 'true'
-          }
-        }
-      );
-    }
+    const data = await fetchWithFallback(apiUrls, {
+      cache: 'no-store'
+    });
+    
+    console.log(`[${new Date().toISOString()}] ${endpoint} - Raw data:`, JSON.stringify(data).slice(0, 200) + '...');
     
     // 处理实时API数据
     const formattedData = formatData(endpoint, data);
@@ -536,6 +324,7 @@ export async function GET(request: Request) {
     console.error(`[${new Date().toISOString()}] API route error:`, error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     
+    // 直接返回错误，不使用模拟数据
     const errorResponse = {
       error: 'Failed to fetch from Binance API',
       details: error instanceof Error ? error.message : 'Unknown error',
