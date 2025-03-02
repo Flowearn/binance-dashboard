@@ -114,7 +114,10 @@ const formatData = (endpoint: string, data: any) => {
   }
 };
 
-// 添加生成模拟数据的函数
+// 添加缓存对象，用于存储生成的K线数据
+let klineDataCache: { [key: string]: any[] } = {};
+let lastUpdateTime: { [key: string]: number } = {};
+
 const generateMockData = (endpoint: string, symbol: string) => {
   console.log(`[${new Date().toISOString()}] Generating mock data for ${endpoint} and symbol ${symbol}`);
   
@@ -123,6 +126,31 @@ const generateMockData = (endpoint: string, symbol: string) => {
   switch (endpoint) {
     case 'kline':
     case 'klines':
+      // 检查缓存中是否已有数据，以及上次更新时间是否超过10分钟
+      const cacheKey = `${endpoint}_${symbol}`;
+      const now = Date.now();
+      const shouldRefreshCache = !klineDataCache[cacheKey] || 
+                                !lastUpdateTime[cacheKey] || 
+                                (now - lastUpdateTime[cacheKey]) > 600000; // 10分钟更新一次完整数据
+      
+      // 如果缓存有效，只更新最后一个K线
+      if (!shouldRefreshCache) {
+        const cachedData = [...klineDataCache[cacheKey]];
+        const lastItem = cachedData[cachedData.length - 1];
+        
+        // 更新最后一个K线的收盘价和成交量
+        const volatility = lastItem.close * 0.001; // 小波动
+        const priceChange = (Math.random() - 0.5) * 2 * volatility;
+        lastItem.close = Math.max(lastItem.close + priceChange, lastItem.close * 0.999);
+        lastItem.high = Math.max(lastItem.high, lastItem.close);
+        lastItem.low = Math.min(lastItem.low, lastItem.close);
+        lastItem.volume += Math.random() * 5;
+        
+        console.log(`[${new Date().toISOString()}] Updated last K-line data for ${symbol}`);
+        return cachedData;
+      }
+      
+      // 需要生成全新的数据
       const klines = [];
       const klineNow = Date.now();
       
@@ -165,6 +193,12 @@ const generateMockData = (endpoint: string, symbol: string) => {
         // 更新lastClose为当前蜡烛的收盘价
         lastClose = close;
       }
+      
+      // 更新缓存
+      klineDataCache[cacheKey] = klines;
+      lastUpdateTime[cacheKey] = now;
+      
+      console.log(`[${new Date().toISOString()}] Generated new K-line data for ${symbol}`);
       return klines;
       
     case 'orderbook':

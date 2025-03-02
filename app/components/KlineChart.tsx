@@ -40,7 +40,7 @@ export default function KlineChart() {
     symbol: 'BTCUSDT',
     interval: selectedInterval,
     limit: 200,
-    refreshInterval: 5000, // 5秒更新一次
+    refreshInterval: 30000, // 从5秒改为30秒更新一次
   };
 
   const { data: klineData, error, isLoading } = useBinanceData<KlineData[]>(klineOptions);
