@@ -121,7 +121,8 @@ let lastUpdateTime: { [key: string]: number } = {};
 const generateMockData = (endpoint: string, symbol: string) => {
   console.log(`[${new Date().toISOString()}] Generating mock data for ${endpoint} and symbol ${symbol}`);
   
-  const currentPrice = symbol.includes('BTC') ? 85700 + Math.random() * 1000 : 3000 + Math.random() * 100;
+  // 更新BTC价格到当前市场价格范围
+  const currentPrice = symbol.includes('BTC') ? 67500 + Math.random() * 1000 : 3000 + Math.random() * 100;
   
   switch (endpoint) {
     case 'kline':
