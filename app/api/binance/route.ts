@@ -118,7 +118,7 @@ const formatData = (endpoint: string, data: any) => {
 const generateMockData = (endpoint: string, symbol: string) => {
   console.log(`[${new Date().toISOString()}] Generating mock data for ${endpoint} and symbol ${symbol}`);
   
-  const currentPrice = symbol.includes('BTC') ? 65000 + Math.random() * 1000 : 3000 + Math.random() * 100;
+  const currentPrice = symbol.includes('BTC') ? 85700 + Math.random() * 1000 : 3000 + Math.random() * 100;
   
   switch (endpoint) {
     case 'kline':
