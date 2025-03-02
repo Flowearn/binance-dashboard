@@ -136,19 +136,32 @@ export default function KlineChart() {
   useEffect(() => {
     if (!klineData || !candlestickSeriesRef.current || !volumeSeriesRef.current) return;
 
-    const candleData = klineData.map((item): CandlestickData => ({
-      time: (item.time / 1000) as Time,
-      open: parseFloat(item.open),
-      high: parseFloat(item.high),
-      low: parseFloat(item.low),
-      close: parseFloat(item.close),
+    // 确保数据按时间排序
+    const sortedData = [...klineData].sort((a, b) => a.time - b.time);
+
+    const candleData = sortedData.map((item): CandlestickData => ({
+      // 确保时间戳正确转换为秒级时间戳
+      time: Math.floor(item.time / 1000) as Time,
+      open: typeof item.open === 'string' ? parseFloat(item.open) : item.open,
+      high: typeof item.high === 'string' ? parseFloat(item.high) : item.high,
+      low: typeof item.low === 'string' ? parseFloat(item.low) : item.low,
+      close: typeof item.close === 'string' ? parseFloat(item.close) : item.close,
     }));
 
-    const volumeData = klineData.map((item): HistogramData => ({
-      time: (item.time / 1000) as Time,
-      value: parseFloat(item.volume),
-      color: parseFloat(item.close) >= parseFloat(item.open) ? '#4CAF50' : '#F44336',
+    const volumeData = sortedData.map((item): HistogramData => ({
+      time: Math.floor(item.time / 1000) as Time,
+      value: typeof item.volume === 'string' ? parseFloat(item.volume) : item.volume,
+      color: (typeof item.close === 'string' ? parseFloat(item.close) : item.close) >= 
+             (typeof item.open === 'string' ? parseFloat(item.open) : item.open) 
+             ? '#4CAF50' : '#F44336',
     }));
+
+    console.log('Processed K-line data:', { 
+      originalLength: klineData.length,
+      processedLength: candleData.length,
+      firstItem: candleData[0],
+      lastItem: candleData[candleData.length - 1]
+    });
 
     candlestickSeriesRef.current.setData(candleData);
     volumeSeriesRef.current.setData(volumeData);
