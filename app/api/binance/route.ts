@@ -114,11 +114,12 @@ const formatData = (endpoint: string, data: any) => {
   }
 };
 
-// 修改fetchWithFallback函数，简化错误处理
+// 修改fetchWithFallback函数，添加对地理位置限制错误的特殊处理
 async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
   let lastError: Error | null = null;
   let lastResponse: Response | null = null;
   let lastResponseText: string | null = null;
+  let isGeoRestricted = false;
 
   for (const url of urls) {
     try {
@@ -146,6 +147,26 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
           statusText: response.statusText,
           body: lastResponseText
         });
+        
+        // 检查是否是地理位置限制错误
+        if (response.status === 451) {
+          try {
+            const errorData = JSON.parse(lastResponseText);
+            if (
+              errorData.code === 0 && 
+              errorData.msg && 
+              (errorData.msg.includes('restricted location') || 
+               errorData.msg.includes('Service unavailable from a restricted location'))
+            ) {
+              console.log(`[${new Date().toISOString()}] Detected geo-restriction from Binance API`);
+              isGeoRestricted = true;
+              break; // 如果检测到地理位置限制，立即停止尝试其他URL
+            }
+          } catch (e) {
+            // 解析错误响应失败，继续尝试下一个URL
+          }
+        }
+        
         continue;
       }
 
@@ -166,6 +187,11 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
         console.log(`[${new Date().toISOString()}] Request timeout for ${url}`);
       }
     }
+  }
+
+  // 如果检测到地理位置限制，抛出特定错误
+  if (isGeoRestricted) {
+    throw new Error('BINANCE_GEO_RESTRICTED');
   }
 
   // 如果所有 URL 都失败了，返回详细的错误信息
@@ -324,20 +350,33 @@ export async function GET(request: Request) {
     console.error(`[${new Date().toISOString()}] API route error:`, error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     
-    // 直接返回错误，不使用模拟数据
-    const errorResponse = {
-      error: 'Failed to fetch from Binance API',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      code: 'API_ERROR',
-      timestamp: new Date().toISOString()
-    };
+    // 根据错误类型返回不同的错误信息
+    let errorResponse;
+    let statusCode = 500;
+    
+    if (error instanceof Error && error.message === 'BINANCE_GEO_RESTRICTED') {
+      errorResponse = {
+        error: 'Binance API Geo-Restricted',
+        details: '您所在的地区无法访问Binance API。这可能是由于Binance的地区限制政策导致的。您可以考虑使用VPN或代理服务器，或者联系Binance客服获取更多信息。',
+        code: 'BINANCE_GEO_RESTRICTED',
+        timestamp: new Date().toISOString()
+      };
+      statusCode = 403; // 使用403 Forbidden更合适
+    } else {
+      errorResponse = {
+        error: 'Failed to fetch from Binance API',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        code: 'API_ERROR',
+        timestamp: new Date().toISOString()
+      };
+    }
     
     console.error('[Error Response]', JSON.stringify(errorResponse, null, 2));
     
     return new NextResponse(
       JSON.stringify(errorResponse),
       {
-        status: 500,
+        status: statusCode,
         headers: { 
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',

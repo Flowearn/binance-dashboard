@@ -167,11 +167,101 @@ export default function KlineChart() {
     volumeSeriesRef.current.setData(volumeData);
   }, [klineData]);
 
+  // 处理间隔变化
+  const handleIntervalChange = (interval: KlineInterval) => {
+    setSelectedInterval(interval);
+  };
+
+  // 检查是否是地理位置限制错误
+  const isGeoRestrictedError = error && 
+    typeof error === 'object' && 
+    'code' in error && 
+    error.code === 'BINANCE_GEO_RESTRICTED';
+
+  // 渲染错误信息
   if (error) {
     return (
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Price Chart</h2>
-        <div className="text-red-500">Error loading chart data</div>
+      <div className="w-full h-full flex flex-col">
+        <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
+          <h3 className="text-lg font-semibold">BTC/USDT K线图</h3>
+          <div className="flex space-x-1">
+            {intervals.map((interval) => (
+              <button
+                key={interval.value}
+                className={`px-2 py-1 text-xs rounded ${
+                  selectedInterval === interval.value
+                    ? 'bg-blue-600'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                }`}
+                onClick={() => handleIntervalChange(interval.value)}
+              >
+                {interval.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center bg-gray-900 p-4">
+          <div className="text-center p-6 bg-gray-800 rounded-lg max-w-md">
+            {isGeoRestrictedError ? (
+              <>
+                <h3 className="text-xl font-bold text-red-500 mb-4">Binance API 地理位置限制</h3>
+                <p className="text-gray-300 mb-4">
+                  您所在的地区无法访问Binance API。这可能是由于Binance的地区限制政策导致的。
+                </p>
+                <p className="text-gray-300 mb-4">
+                  可能的解决方案:
+                </p>
+                <ul className="text-left text-gray-300 mb-4 list-disc pl-5">
+                  <li>使用VPN或代理服务器</li>
+                  <li>使用其他支持您所在地区的加密货币交易所API</li>
+                  <li>联系Binance客服获取更多信息</li>
+                </ul>
+                <p className="text-gray-400 text-sm">
+                  错误代码: {error.code}
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-red-500 mb-4">加载K线数据失败</h3>
+                <p className="text-gray-300 mb-4">
+                  无法从Binance API获取数据。请稍后再试。
+                </p>
+                <p className="text-gray-400 text-sm">
+                  错误信息: {error.message || JSON.stringify(error)}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 加载中状态
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
+          <h3 className="text-lg font-semibold">BTC/USDT K线图</h3>
+          <div className="flex space-x-1">
+            {intervals.map((interval) => (
+              <button
+                key={interval.value}
+                className={`px-2 py-1 text-xs rounded ${
+                  selectedInterval === interval.value
+                    ? 'bg-blue-600'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                }`}
+                onClick={() => handleIntervalChange(interval.value)}
+              >
+                {interval.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center bg-gray-900">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
       </div>
     );
   }
@@ -197,11 +287,6 @@ export default function KlineChart() {
         className="chart-container relative" 
         style={{ height: 'calc(100% - 50px)', width: '100%', overflow: 'hidden' }}
       >
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80">
-            <div className="animate-pulse">Loading chart data...</div>
-          </div>
-        )}
       </div>
     </div>
   );
