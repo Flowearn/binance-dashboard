@@ -121,8 +121,8 @@ let lastUpdateTime: { [key: string]: number } = {};
 const generateMockData = (endpoint: string, symbol: string) => {
   console.log(`[${new Date().toISOString()}] Generating mock data for ${endpoint} and symbol ${symbol}`);
   
-  // 更新BTC价格到当前市场价格范围
-  const currentPrice = symbol.includes('BTC') ? 67500 + Math.random() * 1000 : 3000 + Math.random() * 100;
+  // 更新BTC价格到当前实际市场价格范围
+  const currentPrice = symbol.includes('BTC') ? 86000 + Math.random() * 1000 : 3000 + Math.random() * 100;
   
   switch (endpoint) {
     case 'kline':
@@ -473,59 +473,65 @@ export async function GET(request: Request) {
       );
     }
 
+    // 设置一个标志，表示是否使用模拟数据
+    let useMockData = false;
+    let data;
+
     try {
       const apiUrls = getApiUrls(endpoint, searchParams);
       console.log(`[${new Date().toISOString()}] Trying API URLs for ${endpoint}:`, apiUrls);
 
-      const data = await fetchWithFallback(apiUrls, {
+      data = await fetchWithFallback(apiUrls, {
         cache: 'no-store'
       });
       
       console.log(`[${new Date().toISOString()}] ${endpoint} - Raw data:`, JSON.stringify(data).slice(0, 200) + '...');
+    } catch (error) {
+      // 检查是否是地理位置限制错误或其他API错误
+      console.error(`[${new Date().toISOString()}] Error fetching from Binance API:`, error);
+      useMockData = true;
+    }
+
+    // 如果需要使用模拟数据
+    if (useMockData) {
+      console.log(`[${new Date().toISOString()}] Using mock data for ${endpoint}`);
+      data = generateMockData(endpoint, symbol);
       
-      const formattedData = formatData(endpoint, data);
-      console.log(`[${new Date().toISOString()}] ${endpoint} - Formatted data:`, JSON.stringify(formattedData).slice(0, 200) + '...');
-
-      if (!formattedData) {
-        throw new Error('Failed to format data');
-      }
-
       return new NextResponse(
-        JSON.stringify(formattedData),
+        JSON.stringify(data),
         {
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'X-Mock-Data': 'true'
           }
         }
       );
-    } catch (error) {
-      // 检查是否是地理位置限制错误
-      if (error instanceof Error && error.message === 'GEO_RESTRICTED') {
-        console.log(`[${new Date().toISOString()}] Using mock data due to geo-restriction`);
-        const mockData = generateMockData(endpoint, symbol);
-        
-        return new NextResponse(
-          JSON.stringify(mockData),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type',
-              'X-Mock-Data': 'true'
-            }
-          }
-        );
-      }
-      
-      // 其他错误继续抛出
-      throw error;
     }
+    
+    // 处理实时API数据
+    const formattedData = formatData(endpoint, data);
+    console.log(`[${new Date().toISOString()}] ${endpoint} - Formatted data:`, JSON.stringify(formattedData).slice(0, 200) + '...');
+
+    if (!formattedData) {
+      throw new Error('Failed to format data');
+    }
+
+    return new NextResponse(
+      JSON.stringify(formattedData),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      }
+    );
   } catch (error) {
     console.error(`[${new Date().toISOString()}] API route error:`, error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
