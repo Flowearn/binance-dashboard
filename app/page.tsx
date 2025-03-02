@@ -30,9 +30,11 @@ export default function Home() {
 
       <div className="container py-4">
         {/* 第一行: K线图 */}
-        <div className="data-box p-5 mb-4">
+        <div style={{ marginBottom: '1rem' }} className="data-box p-5">
           <h2 className="data-box-title">K-line Chart</h2>
-          <KlineChart />
+          <div style={{ height: '400px', width: '100%' }}>
+            <KlineChart />
+          </div>
         </div>
 
         {/* 第二行: 订单簿和交易量分类 */}

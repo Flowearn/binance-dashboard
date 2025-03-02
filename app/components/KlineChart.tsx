@@ -49,17 +49,36 @@ export default function KlineChart() {
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // 清除旧图表
+    if (chartRef.current) {
+      chartRef.current.remove();
+      chartRef.current = null;
+      candlestickSeriesRef.current = null;
+      volumeSeriesRef.current = null;
+    }
+
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { color: 'white' },
+        background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#333',
       },
-      grid: {
-        vertLines: { color: '#f0f0f0' },
-        horzLines: { color: '#f0f0f0' },
-      },
       width: chartContainerRef.current.clientWidth,
-      height: 500,
+      height: chartContainerRef.current.clientHeight || 400,
+      grid: {
+        vertLines: { color: 'rgba(42, 46, 57, 0.1)' },
+        horzLines: { color: 'rgba(42, 46, 57, 0.1)' },
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        borderColor: 'rgba(197, 203, 206, 0.4)',
+      },
+      rightPriceScale: {
+        borderColor: 'rgba(197, 203, 206, 0.4)',
+      },
+      crosshair: {
+        mode: 0,
+      },
     });
 
     // 添加K线图系列
@@ -92,11 +111,12 @@ export default function KlineChart() {
     candlestickSeriesRef.current = candlestickSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    // 响应式调整
+    // 添加窗口大小变化监听器
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight || 400,
         });
       }
     };
@@ -105,7 +125,10 @@ export default function KlineChart() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+      }
     };
   }, []);
 
