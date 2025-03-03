@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 const generateMockData = (symbol: string, type: string) => {
   console.log(`[${new Date().toISOString()}] Generating mock data for ${type} and symbol ${symbol}`);
   
-  const currentPrice = symbol.includes('BTC') ? 65000 + Math.random() * 1000 : 3000 + Math.random() * 100;
+  const currentPrice = symbol.includes('BTC') ? 86000 + Math.random() * 1000 : 3000 + Math.random() * 100;
   const timestamp = new Date().toISOString();
   
   switch (type) {
@@ -18,23 +18,19 @@ const generateMockData = (symbol: string, type: string) => {
       for (let i = 0; i < 10; i++) {
         const bidPrice = currentPrice - (i + 1) * 10 - Math.random() * 5;
         const bidQty = 0.1 + Math.random() * 2;
-        bids.push([bidPrice, bidQty]);
+        bids.push([bidPrice.toFixed(2), bidQty.toFixed(8)]);
         
         const askPrice = currentPrice + (i + 1) * 10 + Math.random() * 5;
         const askQty = 0.1 + Math.random() * 2;
-        asks.push([askPrice, askQty]);
+        asks.push([askPrice.toFixed(2), askQty.toFixed(8)]);
       }
       
       return {
         success: true,
         data: {
-          symbol,
-          timestamp,
-          data: {
-            bids,
-            asks,
-            lastUpdateId: Date.now()
-          }
+          lastUpdateId: Date.now(),
+          bids,
+          asks
         }
       };
       
@@ -50,30 +46,25 @@ const generateMockData = (symbol: string, type: string) => {
         const low = Math.min(open, close) - Math.random() * 20;
         const volume = 10 + Math.random() * 100;
         
-        klines.push({
-          openTime: time,
-          open: open.toString(),
-          high: high.toString(),
-          low: low.toString(),
-          close: close.toString(),
-          volume: volume.toString(),
-          closeTime: time + 3600000,
-          quoteVolume: (volume * close).toString(),
-          trades: 500,
-          takerBuyBaseVolume: (volume * 0.6).toString(),
-          takerBuyQuoteVolume: (volume * close * 0.6).toString()
-        });
+        klines.push([
+          time,
+          open.toFixed(2),
+          high.toFixed(2),
+          low.toFixed(2),
+          close.toFixed(2),
+          volume.toFixed(8),
+          time + 3600000,
+          (volume * close).toFixed(8),
+          500,
+          (volume * 0.6).toFixed(8),
+          (volume * close * 0.6).toFixed(8),
+          "0"
+        ]);
       }
       
       return {
         success: true,
-        data: {
-          symbol,
-          timestamp,
-          data: {
-            klines
-          }
-        }
+        data: klines
       };
       
     case 'trades':
@@ -87,8 +78,9 @@ const generateMockData = (symbol: string, type: string) => {
         
         trades.push({
           id: tradeTime - i,
-          price: price.toString(),
-          qty: qty.toString(),
+          price: price.toFixed(2),
+          qty: qty.toFixed(8),
+          quoteQty: (price * qty).toFixed(8),
           time: tradeTime - i * 1000,
           isBuyerMaker,
           isBestMatch: true
@@ -97,32 +89,23 @@ const generateMockData = (symbol: string, type: string) => {
       
       return {
         success: true,
-        data: {
-          symbol,
-          timestamp,
-          data: trades
-        }
+        data: trades
       };
       
-    case 'fundingRate':
-      // 为资金费率生成模拟数据
-      const fundingRateValue = (-0.001 + Math.random() * 0.002).toString();
-      const nextFundingTime = Date.now() + 8 * 3600000; // 8小时后
-      const mockFundingRateData = [
-        {
-          symbol,
-          fundingRate: fundingRateValue,
-          fundingTime: nextFundingTime,
-          markPrice: currentPrice.toString()
-        }
-      ];
+    case 'ticker':
+      const priceChange = -100 + Math.random() * 200;
+      const priceChangePercent = (priceChange / currentPrice * 100).toFixed(2);
+      const volume = 1000 + Math.random() * 2000;
       
       return {
         success: true,
         data: {
           symbol,
-          timestamp,
-          data: mockFundingRateData
+          priceChange: priceChange.toFixed(2),
+          priceChangePercent,
+          lastPrice: currentPrice.toFixed(2),
+          volume: volume.toFixed(8),
+          quoteVolume: (volume * currentPrice).toFixed(8)
         }
       };
       
@@ -130,11 +113,7 @@ const generateMockData = (symbol: string, type: string) => {
       return {
         success: true,
         data: {
-          symbol,
-          timestamp,
-          data: {
-            message: "Mock data for unknown type"
-          }
+          message: "Mock data for unknown type"
         }
       };
   }
@@ -144,46 +123,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol') || 'BTCUSDT';
   const type = searchParams.get('type') || 'kline';
-  const startTime = searchParams.get('startTime');
-  const endTime = searchParams.get('endTime');
-  const aggregation = searchParams.get('aggregation') as 'hour' | 'day' | 'week' | null;
 
   try {
-    try {
-      if (aggregation) {
-        const data = await DataProcessingService.getAggregatedData(
-          symbol,
-          type,
-          aggregation
-        );
-        return NextResponse.json(data);
-      } else if (startTime && endTime) {
-        const data = await DataProcessingService.getHistoricalData(
-          symbol,
-          type,
-          new Date(startTime),
-          new Date(endTime)
-        );
-        return NextResponse.json(data);
-      } else {
-        const data = await DataProcessingService.getLatestData(symbol, type);
-        return NextResponse.json(data);
+    const mockData = generateMockData(symbol, type);
+    return NextResponse.json(mockData, {
+      headers: {
+        'X-Mock-Data': 'true'
       }
-    } catch (dbError) {
-      console.error('Database error, using mock data:', dbError);
-      // 返回模拟数据
-      const mockData = generateMockData(symbol, type);
-      return NextResponse.json(mockData, {
-        headers: {
-          'X-Mock-Data': 'true'
-        }
-      });
-    }
+    });
   } catch (error) {
-    console.error('Error fetching market data:', error);
-    // 如果所有尝试都失败，返回错误
+    console.error('Error generating mock data:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch market data' },
+      { error: 'Failed to generate mock data' },
       { status: 500 }
     );
   }
@@ -205,26 +156,17 @@ export async function POST(request: Request) {
       case 'trades':
         processedData = DataProcessingService.processTradeData(data, symbol);
         break;
+      case 'ticker':
+        processedData = DataProcessingService.processTickerData(data, symbol);
+        break;
       default:
         processedData = data;
     }
 
-    try {
-      await DataProcessingService.storeMarketData({
-        symbol,
-        type,
-        data: processedData,
-        timestamp: new Date(),
-      });
-      return NextResponse.json({ success: true });
-    } catch (dbError) {
-      console.error('Database error when storing data:', dbError);
-      // 即使数据库存储失败，也返回成功
-      return NextResponse.json({ 
-        success: true,
-        warning: "Data was processed but not stored in database"
-      });
-    }
+    return NextResponse.json({ 
+      success: true,
+      data: processedData
+    });
   } catch (error) {
     console.error('Error processing market data:', error);
     return NextResponse.json(
