@@ -80,13 +80,72 @@ type DataTypeMap = {
 
 const fetcher = async (url: string) => {
   try {
-    // 从market-data API获取模拟数据
-    const response = await fetch(`/api/market-data?${url.split('?')[1]}`);
+    // Parse the original query parameters
+    const params = new URLSearchParams(url.split('?')[1]);
+    const endpoint = params.get('endpoint') || 'kline';
+    
+    // Map the endpoint to the correct type parameter
+    let type = endpoint;
+    if (endpoint === 'ticker/24hr') {
+      type = 'ticker';
+    } else if (endpoint === 'depth') {
+      type = 'orderbook';
+    }
+    
+    // Construct new query parameters
+    const newParams = new URLSearchParams();
+    newParams.set('type', type);
+    
+    // Use Array.from to handle iteration
+    Array.from(params.entries()).forEach(([key, value]) => {
+      if (key !== 'endpoint') {
+        newParams.append(key, value);
+      }
+    });
+    
+    // Make the request to market-data API
+    const response = await fetch(`/api/market-data?${newParams.toString()}`);
     if (!response.ok) {
       throw new Error('Failed to fetch market data');
     }
-    const data = await response.json();
-    return data.data;
+    
+    const result = await response.json();
+    
+    // Handle the success property in the response
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch market data');
+    }
+    
+    // Transform the data based on the endpoint type
+    switch (endpoint) {
+      case 'kline':
+        return result.data.map((item: any) => [
+          item[0],
+          item[1],
+          item[2],
+          item[3],
+          item[4],
+          item[5],
+          item[6],
+          item[7],
+          item[8],
+          item[9],
+          item[10],
+          item[11]
+        ]);
+      case 'depth':
+        return {
+          lastUpdateId: result.data.lastUpdateId,
+          bids: result.data.bids,
+          asks: result.data.asks
+        };
+      case 'ticker/24hr':
+        return result.data;
+      case 'trades':
+        return result.data;
+      default:
+        return result.data;
+    }
   } catch (error) {
     console.error('Error fetching data:', error);
     throw error;
