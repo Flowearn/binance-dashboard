@@ -34,7 +34,10 @@ export default function KlineChart() {
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const [selectedInterval, setSelectedInterval] = useState<KlineInterval>('1d');
+  const [dataSource, setDataSource] = useState<'binance' | 'coingecko'>('binance');
+  const [isDataSourceFallback, setIsDataSourceFallback] = useState(false);
 
+  // Binance API选项
   const klineOptions: KlineDataOptions = {
     endpoint: 'kline',
     symbol: 'BTCUSDT',
@@ -43,7 +46,82 @@ export default function KlineChart() {
     refreshInterval: 30000, // 从5秒改为30秒更新一次
   };
 
-  const { data: klineData, error, isLoading } = useBinanceData<KlineData[]>(klineOptions);
+  // 使用Binance API获取数据
+  const { 
+    data: binanceData, 
+    error: binanceError, 
+    isLoading: isBinanceLoading 
+  } = useBinanceData<KlineData[]>(klineOptions);
+
+  // 使用CoinGecko API获取数据
+  const [coingeckoData, setCoingeckoData] = useState<KlineData[] | null>(null);
+  const [coingeckoError, setCoingeckoError] = useState<Error | null>(null);
+  const [isCoingeckoLoading, setIsCoingeckoLoading] = useState(false);
+
+  // 获取CoinGecko数据
+  useEffect(() => {
+    const fetchCoingeckoData = async () => {
+      if (dataSource !== 'coingecko' && !isDataSourceFallback) return;
+      
+      setIsCoingeckoLoading(true);
+      setCoingeckoError(null);
+      
+      try {
+        // 根据选择的时间间隔确定获取的天数
+        let days = '30';
+        switch (selectedInterval) {
+          case '1m': days = '1'; break;
+          case '15m': days = '7'; break;
+          case '1h': days = '14'; break;
+          case '4h': days = '30'; break;
+          case '1d': days = '90'; break;
+          default: days = '30';
+        }
+        
+        const response = await fetch(`/api/crypto?endpoint=kline&coin=bitcoin&currency=usd&days=${days}`);
+        if (!response.ok) {
+          throw new Error(`CoinGecko API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setCoingeckoData(data);
+      } catch (error) {
+        console.error('Error fetching CoinGecko data:', error);
+        setCoingeckoError(error instanceof Error ? error : new Error('Unknown error'));
+      } finally {
+        setIsCoingeckoLoading(false);
+      }
+    };
+    
+    fetchCoingeckoData();
+  }, [dataSource, selectedInterval, isDataSourceFallback]);
+
+  // 自动切换到CoinGecko，如果Binance API不可用
+  useEffect(() => {
+    // 检查是否是地理位置限制错误
+    const isGeoRestrictedError = binanceError && 
+      typeof binanceError === 'object' && 
+      'code' in binanceError && 
+      binanceError.code === 'BINANCE_GEO_RESTRICTED';
+    
+    if (isGeoRestrictedError && dataSource === 'binance') {
+      console.log('Binance API geo-restricted, falling back to CoinGecko API');
+      setIsDataSourceFallback(true);
+    }
+  }, [binanceError, dataSource]);
+
+  // 确定当前使用的数据
+  const klineData = dataSource === 'binance' && !isDataSourceFallback 
+    ? binanceData 
+    : coingeckoData;
+  
+  const error = dataSource === 'binance' && !isDataSourceFallback 
+    ? binanceError 
+    : coingeckoError;
+  
+  const isLoading = dataSource === 'binance' && !isDataSourceFallback 
+    ? isBinanceLoading 
+    : isCoingeckoLoading;
 
   // 初始化图表
   useEffect(() => {
@@ -172,6 +250,12 @@ export default function KlineChart() {
     setSelectedInterval(interval);
   };
 
+  // 处理数据源切换
+  const handleDataSourceChange = (source: 'binance' | 'coingecko') => {
+    setDataSource(source);
+    setIsDataSourceFallback(false);
+  };
+
   // 检查是否是地理位置限制错误
   const isGeoRestrictedError = error && 
     typeof error === 'object' && 
@@ -179,7 +263,7 @@ export default function KlineChart() {
     error.code === 'BINANCE_GEO_RESTRICTED';
 
   // 渲染错误信息
-  if (error) {
+  if (error && !(isDataSourceFallback && dataSource === 'binance')) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
@@ -209,13 +293,14 @@ export default function KlineChart() {
                   您所在的地区无法访问Binance API。这可能是由于Binance的地区限制政策导致的。
                 </p>
                 <p className="text-gray-300 mb-4">
-                  可能的解决方案:
+                  您可以尝试使用CoinGecko API作为替代数据源：
                 </p>
-                <ul className="text-left text-gray-300 mb-4 list-disc pl-5">
-                  <li>使用VPN或代理服务器</li>
-                  <li>使用其他支持您所在地区的加密货币交易所API</li>
-                  <li>联系Binance客服获取更多信息</li>
-                </ul>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
+                  onClick={() => handleDataSourceChange('coingecko')}
+                >
+                  切换到CoinGecko数据
+                </button>
                 <p className="text-gray-400 text-sm">
                   错误代码: {error.code}
                 </p>
@@ -224,8 +309,23 @@ export default function KlineChart() {
               <>
                 <h3 className="text-xl font-bold text-red-500 mb-4">加载K线数据失败</h3>
                 <p className="text-gray-300 mb-4">
-                  无法从Binance API获取数据。请稍后再试。
+                  无法从{dataSource === 'binance' ? 'Binance' : 'CoinGecko'} API获取数据。请稍后再试。
                 </p>
+                {dataSource === 'binance' ? (
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
+                    onClick={() => handleDataSourceChange('coingecko')}
+                  >
+                    尝试使用CoinGecko数据
+                  </button>
+                ) : (
+                  <button
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
+                    onClick={() => handleDataSourceChange('binance')}
+                  >
+                    尝试使用Binance数据
+                  </button>
+                )}
                 <p className="text-gray-400 text-sm">
                   错误信息: {error.message || JSON.stringify(error)}
                 </p>
@@ -238,7 +338,7 @@ export default function KlineChart() {
   }
 
   // 加载中状态
-  if (isLoading) {
+  if (isLoading && !klineData) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
@@ -267,24 +367,56 @@ export default function KlineChart() {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Price Chart</h2>
-        <div className="space-x-2">
-          {intervals.map(({ label, value }) => (
+    <div className="w-full h-full flex flex-col">
+      <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
+        <div className="flex items-center">
+          <h3 className="text-lg font-semibold mr-2">BTC/USDT K线图</h3>
+          {isDataSourceFallback && (
+            <span className="text-xs bg-yellow-600 text-white px-2 py-1 rounded">
+              使用CoinGecko数据
+            </span>
+          )}
+        </div>
+        <div className="flex space-x-1">
+          {intervals.map((interval) => (
             <button
-              key={value}
-              onClick={() => setSelectedInterval(value)}
-              className={`interval-button ${selectedInterval === value ? 'active' : ''}`}
+              key={interval.value}
+              className={`px-2 py-1 text-xs rounded ${
+                selectedInterval === interval.value
+                  ? 'bg-blue-600'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              onClick={() => handleIntervalChange(interval.value)}
             >
-              {label}
+              {interval.label}
             </button>
           ))}
+          <div className="border-l border-gray-600 mx-1"></div>
+          <button
+            className={`px-2 py-1 text-xs rounded ${
+              dataSource === 'binance' && !isDataSourceFallback
+                ? 'bg-blue-600'
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+            onClick={() => handleDataSourceChange('binance')}
+          >
+            Binance
+          </button>
+          <button
+            className={`px-2 py-1 text-xs rounded ${
+              dataSource === 'coingecko' || isDataSourceFallback
+                ? 'bg-blue-600'
+                : 'bg-gray-700 hover:bg-gray-600'
+            }`}
+            onClick={() => handleDataSourceChange('coingecko')}
+          >
+            CoinGecko
+          </button>
         </div>
       </div>
-      <div 
-        ref={chartContainerRef} 
-        className="chart-container relative" 
+      <div
+        ref={chartContainerRef}
+        className="flex-1 relative"
         style={{ height: 'calc(100% - 50px)', width: '100%', overflow: 'hidden' }}
       >
       </div>

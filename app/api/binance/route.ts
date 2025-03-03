@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // 定义基础URL
 const BINANCE_API = {
@@ -114,12 +115,27 @@ const formatData = (endpoint: string, data: any) => {
   }
 };
 
-// 修改fetchWithFallback函数，添加对地理位置限制错误的特殊处理
+// 修改fetchWithFallback函数，添加代理服务器支持
 async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
   let lastError: Error | null = null;
   let lastResponse: Response | null = null;
   let lastResponseText: string | null = null;
   let isGeoRestricted = false;
+
+  // 尝试使用代理服务器
+  const useProxy = process.env.USE_PROXY === 'true';
+  const proxyUrl = process.env.PROXY_URL || 'http://your-proxy-server:port';
+  
+  // 创建代理agent（如果启用了代理）
+  let proxyAgent;
+  if (useProxy) {
+    try {
+      proxyAgent = new HttpsProxyAgent(proxyUrl);
+      console.log(`[${new Date().toISOString()}] Using proxy: ${proxyUrl}`);
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error creating proxy agent:`, error);
+    }
+  }
 
   for (const url of urls) {
     try {
@@ -127,7 +143,8 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-      const response = await fetch(url, {
+      // 准备fetch选项，如果启用了代理则添加代理agent
+      const fetchOptions: RequestInit = {
         ...options,
         signal: controller.signal,
         headers: {
@@ -135,7 +152,15 @@ async function fetchWithFallback(urls: string[], options: RequestInit = {}) {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
           ...options.headers,
         }
-      });
+      };
+      
+      // 如果有代理agent，添加到选项中
+      if (useProxy && proxyAgent) {
+        // @ts-ignore - TypeScript不识别agent属性，但它在Node.js环境中是有效的
+        fetchOptions.agent = proxyAgent;
+      }
+
+      const response = await fetch(url, fetchOptions);
 
       clearTimeout(timeout);
       lastResponse = response;
