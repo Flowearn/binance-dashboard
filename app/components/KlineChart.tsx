@@ -5,20 +5,20 @@ import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, Time, H
 import { useBinanceData } from '../hooks/useBinanceData';
 import type { KlineDataOptions, KlineInterval } from '../hooks/useBinanceData';
 
-interface KlineData {
-  time: number;  // 开盘时间
-  open: string;  // 开盘价
-  high: string;  // 最高价
-  low: string;   // 最低价
-  close: string; // 收盘价
-  volume: string;// 成交量
-  closeTime: number; // 收盘时间
-  quoteAssetVolume: string; // 成交额
-  trades: number; // 成交笔数
-  takerBuyBaseAssetVolume: string; // 主动买入成交量
-  takerBuyQuoteAssetVolume: string; // 主动买入成交额
-  ignore: string;
-}
+type KlineDataArray = [
+  number,    // time
+  string,    // open
+  string,    // high
+  string,    // low
+  string,    // close
+  string,    // volume
+  number,    // closeTime
+  string,    // quoteAssetVolume
+  number,    // trades
+  string,    // takerBuyBaseAssetVolume
+  string,    // takerBuyQuoteAssetVolume
+  string     // ignore
+];
 
 const intervals: { label: string; value: KlineInterval }[] = [
   { label: '1D', value: '1d' },
@@ -51,10 +51,10 @@ export default function KlineChart() {
     data: binanceData, 
     error: binanceError, 
     isLoading: isBinanceLoading 
-  } = useBinanceData<KlineData[]>(klineOptions);
+  } = useBinanceData<KlineDataArray[]>(klineOptions);
 
   // 使用CoinGecko API获取数据
-  const [coingeckoData, setCoingeckoData] = useState<KlineData[] | null>(null);
+  const [coingeckoData, setCoingeckoData] = useState<KlineDataArray[] | null>(null);
   const [coingeckoError, setCoingeckoError] = useState<Error | null>(null);
   const [isCoingeckoLoading, setIsCoingeckoLoading] = useState(false);
 
@@ -137,50 +137,36 @@ export default function KlineChart() {
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#333',
+        background: { color: '#1a1a1a' },
+        textColor: '#DDD',
+      },
+      grid: {
+        vertLines: { color: '#2B2B43' },
+        horzLines: { color: '#2B2B43' },
       },
       width: chartContainerRef.current.clientWidth,
-      height: chartContainerRef.current.clientHeight || 400,
-      grid: {
-        vertLines: { color: 'rgba(42, 46, 57, 0.1)' },
-        horzLines: { color: 'rgba(42, 46, 57, 0.1)' },
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-        borderColor: 'rgba(197, 203, 206, 0.4)',
-      },
-      rightPriceScale: {
-        borderColor: 'rgba(197, 203, 206, 0.4)',
-      },
-      crosshair: {
-        mode: 0,
-      },
+      height: 500,
     });
 
-    // 添加K线图系列
     const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#4CAF50',
-      downColor: '#F44336',
+      upColor: '#26a69a',
+      downColor: '#ef5350',
       borderVisible: false,
-      wickUpColor: '#4CAF50',
-      wickDownColor: '#F44336',
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
     });
 
-    // 添加成交量系列
     const volumeSeries = chart.addHistogramSeries({
       color: '#26a69a',
       priceFormat: {
         type: 'volume',
       },
-      priceScaleId: '', // 在单独的面板中显示
+      priceScaleId: '',
     });
 
-    // 设置成交量面板的高度
-    chart.priceScale('').applyOptions({
+    volumeSeries.priceScale().applyOptions({
       scaleMargins: {
-        top: 0.8, // 主图表占80%
+        top: 0.8,
         bottom: 0,
       },
     });
@@ -189,12 +175,10 @@ export default function KlineChart() {
     candlestickSeriesRef.current = candlestickSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    // 添加窗口大小变化监听器
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
+      if (chartContainerRef.current) {
+        chart.applyOptions({
           width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight || 400,
         });
       }
     };
@@ -203,43 +187,27 @@ export default function KlineChart() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-      }
+      chart.remove();
     };
   }, []);
 
-  // 更新数据
+  // 更新图表数据
   useEffect(() => {
-    if (!klineData || !candlestickSeriesRef.current || !volumeSeriesRef.current) return;
+    if (!candlestickSeriesRef.current || !volumeSeriesRef.current || !klineData) return;
 
-    // 确保数据按时间排序
-    const sortedData = [...klineData].sort((a, b) => a.time - b.time);
-
-    const candleData = sortedData.map((item): CandlestickData => ({
-      // 确保时间戳正确转换为秒级时间戳
-      time: Math.floor(item.time / 1000) as Time,
-      open: typeof item.open === 'string' ? parseFloat(item.open) : item.open,
-      high: typeof item.high === 'string' ? parseFloat(item.high) : item.high,
-      low: typeof item.low === 'string' ? parseFloat(item.low) : item.low,
-      close: typeof item.close === 'string' ? parseFloat(item.close) : item.close,
+    const candleData = klineData.map((item) => ({
+      time: item[0] / 1000 as Time,
+      open: parseFloat(item[1]),
+      high: parseFloat(item[2]),
+      low: parseFloat(item[3]),
+      close: parseFloat(item[4])
     }));
 
-    const volumeData = sortedData.map((item): HistogramData => ({
-      time: Math.floor(item.time / 1000) as Time,
-      value: typeof item.volume === 'string' ? parseFloat(item.volume) : item.volume,
-      color: (typeof item.close === 'string' ? parseFloat(item.close) : item.close) >= 
-             (typeof item.open === 'string' ? parseFloat(item.open) : item.open) 
-             ? '#4CAF50' : '#F44336',
+    const volumeData = klineData.map((item) => ({
+      time: item[0] / 1000 as Time,
+      value: parseFloat(item[5]),
+      color: parseFloat(item[4]) >= parseFloat(item[1]) ? '#26a69a' : '#ef5350'
     }));
-
-    console.log('Processed K-line data:', { 
-      originalLength: klineData.length,
-      processedLength: candleData.length,
-      firstItem: candleData[0],
-      lastItem: candleData[candleData.length - 1]
-    });
 
     candlestickSeriesRef.current.setData(candleData);
     volumeSeriesRef.current.setData(volumeData);
@@ -265,74 +233,26 @@ export default function KlineChart() {
   // 渲染错误信息
   if (error && !(isDataSourceFallback && dataSource === 'binance')) {
     return (
-      <div className="w-full h-full flex flex-col">
-        <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
-          <h3 className="text-lg font-semibold">BTC/USDT K线图</h3>
-          <div className="flex space-x-1">
-            {intervals.map((interval) => (
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">BTC/USDT</h2>
+          <div className="flex space-x-2">
+            {intervals.map(({ label, value }) => (
               <button
-                key={interval.value}
-                className={`px-2 py-1 text-xs rounded ${
-                  selectedInterval === interval.value
-                    ? 'bg-blue-600'
-                    : 'bg-gray-700 hover:bg-gray-600'
+                key={value}
+                className={`px-3 py-1 rounded ${
+                  selectedInterval === value
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
-                onClick={() => handleIntervalChange(interval.value)}
+                onClick={() => handleIntervalChange(value)}
               >
-                {interval.label}
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center bg-gray-900 p-4">
-          <div className="text-center p-6 bg-gray-800 rounded-lg max-w-md">
-            {isGeoRestrictedError ? (
-              <>
-                <h3 className="text-xl font-bold text-red-500 mb-4">Binance API 地理位置限制</h3>
-                <p className="text-gray-300 mb-4">
-                  您所在的地区无法访问Binance API。这可能是由于Binance的地区限制政策导致的。
-                </p>
-                <p className="text-gray-300 mb-4">
-                  您可以尝试使用CoinGecko API作为替代数据源：
-                </p>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
-                  onClick={() => handleDataSourceChange('coingecko')}
-                >
-                  切换到CoinGecko数据
-                </button>
-                <p className="text-gray-400 text-sm">
-                  错误代码: {error.code}
-                </p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-xl font-bold text-red-500 mb-4">加载K线数据失败</h3>
-                <p className="text-gray-300 mb-4">
-                  无法从{dataSource === 'binance' ? 'Binance' : 'CoinGecko'} API获取数据。请稍后再试。
-                </p>
-                {dataSource === 'binance' ? (
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
-                    onClick={() => handleDataSourceChange('coingecko')}
-                  >
-                    尝试使用CoinGecko数据
-                  </button>
-                ) : (
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-4"
-                    onClick={() => handleDataSourceChange('binance')}
-                  >
-                    尝试使用Binance数据
-                  </button>
-                )}
-                <p className="text-gray-400 text-sm">
-                  错误信息: {error.message || JSON.stringify(error)}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
+        <div className="text-red-500">Error loading chart data</div>
       </div>
     );
   }
@@ -340,86 +260,51 @@ export default function KlineChart() {
   // 加载中状态
   if (isLoading && !klineData) {
     return (
-      <div className="w-full h-full flex flex-col">
-        <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
-          <h3 className="text-lg font-semibold">BTC/USDT K线图</h3>
-          <div className="flex space-x-1">
-            {intervals.map((interval) => (
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">BTC/USDT</h2>
+          <div className="flex space-x-2">
+            {intervals.map(({ label, value }) => (
               <button
-                key={interval.value}
-                className={`px-2 py-1 text-xs rounded ${
-                  selectedInterval === interval.value
-                    ? 'bg-blue-600'
-                    : 'bg-gray-700 hover:bg-gray-600'
+                key={value}
+                className={`px-3 py-1 rounded ${
+                  selectedInterval === value
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 }`}
-                onClick={() => handleIntervalChange(interval.value)}
+                onClick={() => handleIntervalChange(value)}
               >
-                {interval.label}
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center bg-gray-900">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+        <div className="animate-pulse">Loading chart data...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex justify-between items-center p-2 bg-gray-800 text-white">
-        <div className="flex items-center">
-          <h3 className="text-lg font-semibold mr-2">BTC/USDT K线图</h3>
-          {isDataSourceFallback && (
-            <span className="text-xs bg-yellow-600 text-white px-2 py-1 rounded">
-              使用CoinGecko数据
-            </span>
-          )}
-        </div>
-        <div className="flex space-x-1">
-          {intervals.map((interval) => (
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">BTC/USDT</h2>
+        <div className="flex space-x-2">
+          {intervals.map(({ label, value }) => (
             <button
-              key={interval.value}
-              className={`px-2 py-1 text-xs rounded ${
-                selectedInterval === interval.value
-                  ? 'bg-blue-600'
-                  : 'bg-gray-700 hover:bg-gray-600'
+              key={value}
+              className={`px-3 py-1 rounded ${
+                selectedInterval === value
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
-              onClick={() => handleIntervalChange(interval.value)}
+              onClick={() => handleIntervalChange(value)}
             >
-              {interval.label}
+              {label}
             </button>
           ))}
-          <div className="border-l border-gray-600 mx-1"></div>
-          <button
-            className={`px-2 py-1 text-xs rounded ${
-              dataSource === 'binance' && !isDataSourceFallback
-                ? 'bg-blue-600'
-                : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-            onClick={() => handleDataSourceChange('binance')}
-          >
-            Binance
-          </button>
-          <button
-            className={`px-2 py-1 text-xs rounded ${
-              dataSource === 'coingecko' || isDataSourceFallback
-                ? 'bg-blue-600'
-                : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-            onClick={() => handleDataSourceChange('coingecko')}
-          >
-            CoinGecko
-          </button>
         </div>
       </div>
-      <div
-        ref={chartContainerRef}
-        className="flex-1 relative"
-        style={{ height: 'calc(100% - 50px)', width: '100%', overflow: 'hidden' }}
-      >
-      </div>
+      <div ref={chartContainerRef} />
     </div>
   );
 } 

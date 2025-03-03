@@ -49,26 +49,28 @@ export default function PriceChange() {
   const percentChangeAbs = formatNumber(Math.abs(Number(data.priceChangePercent)));
 
   return (
-    <div>
+    <div className="p-4">
       <h2 className="text-xl font-bold mb-4">24h Change</h2>
-      <div className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <div className={`text-3xl font-bold ${isPositive ? 'text-[#4CAF50]' : 'text-[#F44336]'}`}>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <div className="text-sm text-gray-400 mb-1">Price Change</div>
+          <div className={`text-lg font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
             {isPositive ? '+' : '-'}${priceChangeAbs}
           </div>
-          <div className={`text-2xl font-semibold ${isPositive ? 'text-[#4CAF50]' : 'text-[#F44336]'}`}>
-            ({isPositive ? '+' : '-'}{percentChangeAbs}%)
+        </div>
+        <div>
+          <div className="text-sm text-gray-400 mb-1">Percent Change</div>
+          <div className={`text-lg font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            {isPositive ? '+' : '-'}{percentChangeAbs}%
           </div>
         </div>
-        <div className="text-gray-600">
-          <div className="flex justify-between items-center text-sm">
-            <span>Current Price</span>
-            <span className="font-mono">${formatNumber(data.lastPrice)}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm mt-2">
-            <span>24h Volume</span>
-            <span className="font-mono">${formatNumber(Number(data.quoteVolume), 0)}</span>
-          </div>
+        <div>
+          <div className="text-sm text-gray-400 mb-1">Last Price</div>
+          <div className="text-lg font-bold">${formatNumber(data.lastPrice)}</div>
+        </div>
+        <div>
+          <div className="text-sm text-gray-400 mb-1">24h Volume</div>
+          <div className="text-lg font-bold">{formatNumber(data.volume)} BTC</div>
         </div>
       </div>
     </div>

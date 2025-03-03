@@ -47,20 +47,7 @@ export type UseBinanceDataOptions =
 
 // 响应数据类型映射
 type DataTypeMap = {
-  kline: Array<{
-    time: number;
-    open: string;
-    high: string;
-    low: string;
-    close: string;
-    volume: string;
-    closeTime: number;
-    quoteAssetVolume: string;
-    trades: number;
-    takerBuyBaseAssetVolume: string;
-    takerBuyQuoteAssetVolume: string;
-    ignore: string;
-  }>;
+  kline: [number, string, string, string, string, string, number, string, number, string, string, string][];
   depth: {
     lastUpdateId: number;
     bids: [string, string][];
@@ -93,34 +80,13 @@ type DataTypeMap = {
 
 const fetcher = async (url: string) => {
   try {
-    // 直接从Binance API获取实时数据
-    const binanceResponse = await fetch(`/api/binance?${url.split('?')[1]}`);
-    if (!binanceResponse.ok) {
-      throw new Error('Failed to fetch from Binance API');
+    // 从market-data API获取模拟数据
+    const response = await fetch(`/api/market-data?${url.split('?')[1]}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch market data');
     }
-    const binanceData = await binanceResponse.json();
-
-    // 异步存储数据，不阻塞主流程
-    (async () => {
-      try {
-        await fetch('/api/market-data', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            symbol: new URLSearchParams(url.split('?')[1]).get('symbol') || 'BTCUSDT',
-            type: new URLSearchParams(url.split('?')[1]).get('endpoint') || 'orderbook',
-            data: binanceData,
-          }),
-        });
-      } catch (error) {
-        // 存储失败不影响前端展示
-        console.warn('Failed to store market data:', error);
-      }
-    })();
-
-    return binanceData;
+    const data = await response.json();
+    return data.data;
   } catch (error) {
     console.error('Error fetching data:', error);
     throw error;

@@ -1,140 +1,83 @@
 'use client';
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
-import { formatNumber } from '@/lib/utils';
-
-type OrderBookEntry = [string, string]; // [price, quantity]
+import { useEffect, useState } from 'react';
+import { useBinanceData } from '../hooks/useBinanceData';
 
 interface OrderBookData {
-  bids: OrderBookEntry[];
-  asks: OrderBookEntry[];
   lastUpdateId: number;
-  timestamp: number;
+  bids: [string, string][];
+  asks: [string, string][];
 }
 
-interface OrderBookProps {
-  symbol: string;
-}
+export default function OrderBook() {
+  const [orderBookData, setOrderBookData] = useState<OrderBookData | null>(null);
 
-export function OrderBook({ symbol }: OrderBookProps) {
-  const { data, isLoading, error } = useQuery<OrderBookData>({
-    queryKey: ["orderbook", symbol],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`/api/binance?endpoint=orderbook&symbol=${symbol}`);
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to fetch order book data');
-        }
-        return response.json();
-      } catch (err) {
-        console.error('Error fetching order book:', err);
-        throw err;
-      }
-    },
-    refetchInterval: 1000,
+  const { data, error, isLoading } = useBinanceData<OrderBookData>({
+    endpoint: 'depth',
+    symbol: 'BTCUSDT',
+    limit: 10,
+    refreshInterval: 1000
   });
 
-  if (isLoading) {
-    return (
-      <div className="w-full min-h-[300px] flex items-center justify-center">
-        <div className="text-muted-foreground">Loading order book...</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (data) {
+      setOrderBookData(data);
+    }
+  }, [data]);
 
   if (error) {
     return (
-      <div className="w-full min-h-[300px] flex items-center justify-center">
-        <div className="text-red-500">
-          {error instanceof Error ? error.message : 'Error loading order book'}
-        </div>
+      <div className="text-center">
+        <h3 className="text-lg font-semibold mb-2">订单簿</h3>
+        <div className="text-red-500">加载失败</div>
       </div>
     );
   }
 
-  if (!data?.bids?.length || !data?.asks?.length) {
+  if (isLoading || !orderBookData) {
     return (
-      <div className="w-full min-h-[300px] flex items-center justify-center">
-        <div className="text-muted-foreground">No order book data available</div>
+      <div className="text-center">
+        <h3 className="text-lg font-semibold mb-2">订单簿</h3>
+        <div className="animate-pulse">加载中...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="text-sm text-muted-foreground mb-2 text-right">
-        Last update: {new Date(data?.timestamp || Date.now()).toLocaleTimeString()}
-      </div>
+    <div>
+      <h3 className="text-lg font-semibold mb-2">订单簿</h3>
       <div className="grid grid-cols-2 gap-4">
-        {/* Bids (Buy Orders) */}
+        {/* 卖单区域 */}
         <div>
-          <div className="mb-2 text-sm font-semibold text-green-500">Buy Orders</div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.bids.slice(0, 10).map(([price, quantity]: OrderBookEntry, index: number) => {
-                const total = parseFloat(price) * parseFloat(quantity);
-                return (
-                  <TableRow key={`bid-${index}`}>
-                    <TableCell className="text-right font-medium text-green-500">
-                      {formatNumber(parseFloat(price), 2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatNumber(parseFloat(quantity), 4)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatNumber(total, 4)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="text-red-500 font-semibold mb-1">卖单</div>
+          <div className="space-y-1">
+            {orderBookData.asks.map(([price, amount], index) => (
+              <div
+                key={`ask-${index}`}
+                className="flex justify-between text-sm"
+              >
+                <span className="text-red-500">{price}</span>
+                <span>{amount}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Asks (Sell Orders) */}
+        {/* 买单区域 */}
         <div>
-          <div className="mb-2 text-sm font-semibold text-red-500">Sell Orders</div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.asks.slice(0, 10).map(([price, quantity]: OrderBookEntry, index: number) => {
-                const total = parseFloat(price) * parseFloat(quantity);
-                return (
-                  <TableRow key={`ask-${index}`}>
-                    <TableCell className="text-right font-medium text-red-500">
-                      {formatNumber(parseFloat(price), 2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatNumber(parseFloat(quantity), 4)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {formatNumber(total, 4)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+          <div className="text-green-500 font-semibold mb-1">买单</div>
+          <div className="space-y-1">
+            {orderBookData.bids.map(([price, amount], index) => (
+              <div
+                key={`bid-${index}`}
+                className="flex justify-between text-sm"
+              >
+                <span className="text-green-500">{price}</span>
+                <span>{amount}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="mt-4 text-center text-sm text-muted-foreground">
-        Showing top 10 orders • Updates every second
       </div>
     </div>
   );
